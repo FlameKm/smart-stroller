@@ -1,0 +1,4 @@
+*build*/
+.idea/
+.vscode/
+/LeetCode/leetcode/editor/cn/doc/
