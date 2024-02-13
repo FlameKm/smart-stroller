@@ -1,4 +1,10 @@
 *build*/
 .idea/
 .vscode/
-/LeetCode/leetcode/editor/cn/doc/
+*.ko
+*.cmd
+*.mod
+*.mod.c
+*.o
+Module.symvers
+modules.order
