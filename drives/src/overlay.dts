@@ -1,0 +1,17 @@
+/dts-v1/;
+/plugin/;
+
+/{
+    fragment@0 {
+        target-path = "/";
+        __overlay__ {
+            yc_motor: yc_motor{
+                status = "okay";
+                compatible = "yc,motor";
+                pwms = <&pwm0 0 10000 1>;
+                duty_ns = <5000>;
+            };
+
+        };
+    };
+};
