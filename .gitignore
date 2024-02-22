@@ -8,3 +8,4 @@
 *.o
 Module.symvers
 modules.order
+.dtbo
