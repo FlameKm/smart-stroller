@@ -1,7 +1,7 @@
 //
 // Created by hyc on 24-2-4.
 //
-#include <cstdio>
+#include <stdio.h>
 
 int main()
 {
