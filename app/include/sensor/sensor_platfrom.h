@@ -1,12 +1,34 @@
 #ifndef __SENSOR_PLATFROM_H__
 #define __SENSOR_PLATFROM_H__
 
-#include "sensor.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef struct sensor_op sensor_op_t;
 
-int xxx_sensor_register(sensor_t *sensor);
-int fake_sensor_register(sensor_t *sensor);
+typedef enum SENSOR_TYPE
+{
+    SENSOR_TYPE_FAKE,
+    SENSOR_TYPE_DHT11,
+    SENSOR_TYPE_MQ135,
+    SENSOR_TYPE_SW180110P,
+} SENSOR_TYPE;
 
+typedef struct sensor sensor_t;
+
+int fake_sensor_register(sensor_t *sensor);
+int dht11_sensor_register(sensor_t *sensor);
+int mq135_sensor_register(sensor_t *sensor);
+int sw180110p_sensor_register(sensor_t *sensor);
+
+
+sensor_t *sensor_crete_with_register(enum SENSOR_TYPE type);
+int sensor_register(sensor_t *sensor, enum SENSOR_TYPE type);
+void sensor_destroy(sensor_t *sensor);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
