@@ -1,12 +1,6 @@
 
 #include "sensor_op.h"
 
-int sensor_set_type(sensor_t *sensor, int type)
-{
-    sensor->type = type;
-    return 0;
-}
-
 int sensor_read(sensor_t *sensor, void *value, int size)
 {
     if (sensor->op->read)
