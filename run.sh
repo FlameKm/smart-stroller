@@ -36,6 +36,8 @@ app_compile() {
         cmake -B ./app/build -S ./app -GNinja -DCMAKE_CXX_COMPILER=${CROSS_COMPILE}g++ -DCMAKE_C_COMPILER=${CROSS_COMPILE}gcc
         if [ $? -eq 0 ]; then 
             ninja -C ./app/build
+        else
+            exit
         fi
     fi
 

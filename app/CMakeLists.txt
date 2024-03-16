@@ -11,9 +11,10 @@ include_directories(
     include
     include/actuator
     include/sensor
+    lib/log
 )
 
-file(GLOB_RECURSE SRCS src/*.c)
+file(GLOB_RECURSE SRCS src/*.c lib/*.c)
 
 add_executable(smart ${SRCS})
 
