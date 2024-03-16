@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(app)
+project(smart)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -15,6 +15,6 @@ include_directories(
 
 file(GLOB_RECURSE SRCS src/*.c)
 
-add_executable(app ${SRCS})
+add_executable(smart ${SRCS})
 
 add_subdirectory(unity_test)
