@@ -1,7 +1,5 @@
 #include "sensor_op.h"
-#include "sensor_platfrom.h"
 #include <stdlib.h>
-#include <string.h>
 
 typedef struct sw180110p_data {
     int data;
@@ -9,11 +7,13 @@ typedef struct sw180110p_data {
 
 static int sw180110p_init(sensor_t *sensor)
 {
+    sensor->priv = calloc(1, sizeof(sw180110p_data_t));
     return 0;
 }
 
 static int sw180110p_deinit(sensor_t *sensor)
 {
+    free(sensor->priv);
     return 0;
 }
 
@@ -36,11 +36,6 @@ static const sensor_op_t sw180110p_op = {
 
 int sw180110p_sensor_register(sensor_t *sensor)
 {
-    if (sensor->type != SENSOR_TYPE_SW180110P) {
-        return -1;
-    }
-    sensor->priv = malloc(sizeof(sw180110p_data_t));
-    memset(sensor->priv, 0, sizeof(sw180110p_data_t));
     sensor->op = &sw180110p_op;
     return 0;
 }

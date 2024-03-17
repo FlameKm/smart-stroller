@@ -1,11 +1,10 @@
-#include "sensor_platfrom.h"
-#include "sensor.h"
+#include "sensor_op.h"
 #include <stdlib.h>
+#include "log.h"
 
 int sensor_register(sensor_t *sensor, enum SENSOR_TYPE type)
 {
     int ret = 0;
-    sensor->type = type;
     switch (type) {
         case SENSOR_TYPE_FAKE:
             ret = fake_sensor_register(sensor);
@@ -23,14 +22,17 @@ int sensor_register(sensor_t *sensor, enum SENSOR_TYPE type)
             ret = -1;
             break;
     }
+    if (!ret) {
+        sensor->op->init(sensor);
+    }
     return ret;
 }
 
-sensor_t *sensor_crete_with_register(enum SENSOR_TYPE type)
+sensor_t *sensor_create_with_register(enum SENSOR_TYPE type)
 {
     sensor_t *sensor;
     int ret = 0;
-    sensor = malloc(sizeof(sensor_t));
+    sensor = calloc(1, sizeof(sensor_t));
     if (sensor == NULL) {
         return NULL;
     }
@@ -47,9 +49,6 @@ void sensor_destroy(sensor_t *sensor)
     if (sensor == NULL) {
         return;
     }
-    if (sensor->priv != NULL) {
-        free(sensor->priv);
-        sensor->priv = NULL;
-    }
+    sensor->op->deinit(sensor);
     free(sensor);
 }

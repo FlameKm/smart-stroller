@@ -10,7 +10,7 @@ typedef struct strg {
 
 strg_t *strg_create()
 {
-    strg_t *strg = malloc(sizeof(strg_t));
+    strg_t *strg = calloc(1, sizeof(strg_t));
     return strg;
 }
 

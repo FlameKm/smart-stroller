@@ -22,11 +22,6 @@ int dht11_sensor_register(sensor_t *sensor);
 int mq135_sensor_register(sensor_t *sensor);
 int sw180110p_sensor_register(sensor_t *sensor);
 
-
-sensor_t *sensor_crete_with_register(enum SENSOR_TYPE type);
-int sensor_register(sensor_t *sensor, enum SENSOR_TYPE type);
-void sensor_destroy(sensor_t *sensor);
-
 #ifdef __cplusplus
 }
 #endif

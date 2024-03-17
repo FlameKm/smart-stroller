@@ -9,6 +9,7 @@ extern "C" {
 #include "motor.h"
 #include "sensor.h"
 #include "steering_gear.h"
+#include "comm.h"
 
 typedef struct stlr_sensor {
     sensor_t *dht11;
@@ -16,15 +17,21 @@ typedef struct stlr_sensor {
     sensor_t *sw180110p;
 } stlr_sensor_t;
 
+typedef enum CHASSIS_MODE
+{
+    CHASSIS_MODE_AUTO,
+    CHASSIS_MODE_REMOTE,
+} CHASSIS_MODE;
+
 typedef struct stlr_chassis {
-    int mode;
+    enum CHASSIS_MODE mode;
     motor_t *ml;
     motor_t *mr;
     strg_t *strg;
 } stlr_chassis_t;
 
 typedef struct stlr_comm {
-    void *temporaly;
+    comm_t *comm;
 } stlr_comm_t;
 
 typedef struct stroller {

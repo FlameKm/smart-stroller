@@ -1,7 +1,5 @@
 #include <stdlib.h>
-#include <string.h>
 #include "sensor_op.h"
-#include "sensor_platfrom.h"
 
 typedef struct fake_data {
     void *null_data;
@@ -9,11 +7,13 @@ typedef struct fake_data {
 
 static int fake_init(sensor_t *sensor)
 {
+    sensor->priv = calloc(1, sizeof(fake_data_t));
     return 0;
 }
 
 static int fake_deinit(sensor_t *sensor)
 {
+    free(sensor->priv);
     return 0;
 }
 
@@ -36,11 +36,6 @@ static const sensor_op_t fake_op = {
 
 int fake_sensor_register(sensor_t *sensor)
 {
-    if (sensor->type != SENSOR_TYPE_FAKE) {
-        return -1;
-    }
-    sensor->priv = malloc(sizeof(fake_data_t));
-    memset(sensor->priv, 0, sizeof(fake_data_t));
     sensor->op = &fake_op;
     return 0;
 }

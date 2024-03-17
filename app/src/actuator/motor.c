@@ -10,7 +10,7 @@ typedef struct motor {
 
 motor_t *motor_create(enum MOTOR_WORK_TYPE type)
 {
-    motor_t *motor = malloc(sizeof(motor_t));
+    motor_t *motor = calloc(1, sizeof(motor_t));
     return motor;
 }
 
