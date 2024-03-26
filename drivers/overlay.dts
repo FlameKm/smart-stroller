@@ -8,6 +8,7 @@
             yc_motor: yc_motor{
                 status = "okay";
                 compatible = "yc,motor";
+                pwm = <0>;
                 pwms = <&pwm0 0 10000 1>;
                 duty_ns = <5000>;
             };

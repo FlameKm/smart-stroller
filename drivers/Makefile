@@ -9,7 +9,7 @@ AR 		= $(CROSS_COMPILE)ar
 STRIP 	= $(CROSS_COMPILE)strip
 LD 		= $(CROSS_COMPILE)ld
 
-KERN_DIR = /home/hyc/Project/orangepi-build/kernel/orange-pi-6.1-sun50iw9
+KERN_DIR = /home/hyc/Project/hyc_orangepi/kernel
 
 # INCLUDE_DIR = ../inc/
 

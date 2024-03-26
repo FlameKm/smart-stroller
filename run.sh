@@ -3,24 +3,27 @@ BOARD_USER_NAME="root"
 ARCH="arm64"
 CROSS_COMPILE="/home/hyc/Project/orangepi-build/toolchains/gcc-arm-11.2-2022.02-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-"
 
+SCRIPT_DIR=$(cd $(dirname $0); pwd)
+cd ${SCRIPT_DIR}
+
 scp_file() {
-    scp ./drivers/build/*.ko ${BOARD_USER_NAME}@${IP_TARGET}:~
+case $1 in
+app) 
     scp ./app/build/smart ${BOARD_USER_NAME}@${IP_TARGET}:~
+    ;;
+drivers)
+    scp ./drivers/build/*.ko ${BOARD_USER_NAME}@${IP_TARGET}:~
     scp -r ./app/build/test ${BOARD_USER_NAME}@${IP_TARGET}:~/app_test
-    if [ $? -eq 0 ]; then 
-        echo "scp process complete."
-    else
-        echo "scp process failed."
-    fi
+    ;;
+dtbos)
+    scp ./drivers/build/overlay.dtbo ${BOARD_USER_NAME}@${IP_TARGET}:~
+    ;;
+esac
 }
 
 
 drives_compile() {
-    make -C ./drivers
-    if [ $? -eq 0 ]; then 
-        cp ./drivers/src/**.ko ./drivers/build
-        scp ./drivers/build/*.ko ${BOARD_USER_NAME}@${IP_TARGET}:~ > /dev/null
-    fi
+    make -C ./drivers;
 
     if [ $? -eq 0 ]; then 
         echo "driver process complete."
@@ -42,8 +45,8 @@ app_compile() {
     fi
 
     if [ $? -eq 0 ]; then 
-        scp ./app/build/smart ${BOARD_USER_NAME}@${IP_TARGET}:~ > /dev/null
-        scp -r ./app/build/test ${BOARD_USER_NAME}@${IP_TARGET}:~/app_test > /dev/null
+        scp ./app/build/smart ${BOARD_USER_NAME}@${IP_TARGET}:~ 
+        scp -r ./app/build/test ${BOARD_USER_NAME}@${IP_TARGET}:~/app_test 
     fi
 
     if [ $? -eq 0 ]; then 
@@ -53,16 +56,24 @@ app_compile() {
     fi
 }
 
+dts_overlay_compile() {
+    dtc -I dts -O dtb -o drivers/build/overlay.dtbo drivers/overlay.dts
+}
+
 case $1 in
 app)
     app_compile
+    scp_file app
     ;;
 
 drivers)
     drives_compile
+    dts_overlay_compile
+    scp_file drivers
+    scp_file dtbos
     ;;
 
 scp)
-    scp_file
+    scp_file all
     ;;
 esac
