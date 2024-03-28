@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "../hyc_orangepi/kernel"
+		},
+		{
+			"path": "drivers"
+		},
+		{
+			"path": "../StudyCode/LinuxDrive"
+		}
+	],
+	"settings": {}
+}

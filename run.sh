@@ -23,7 +23,8 @@ esac
 
 
 drives_compile() {
-    make -C ./drivers;
+    make -C ./drivers 
+    cp ./drivers/src/*.ko ./drivers/build
 
     if [ $? -eq 0 ]; then 
         echo "driver process complete."
@@ -67,6 +68,7 @@ app)
     ;;
 
 drivers)
+    rm ./drivers/build/*
     drives_compile
     dts_overlay_compile
     scp_file drivers
