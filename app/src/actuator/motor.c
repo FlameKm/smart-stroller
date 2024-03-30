@@ -56,8 +56,9 @@ motor_t *motor_create(enum MOTOR_WORK_TYPE type, int id)
         case MOTOR_CURRENT_OPEN:
             snprintf(fname,12, "/dev/motor%d", id);
             motor->fd = open(fname, O_RDWR);
-            if(motor->fd == 0) {
+            if (motor->fd < 0) {
                 log_error("Failed open the %s", fname);
+                return NULL;
             }
             break;
         case MOTOR_SPEED_RING:
