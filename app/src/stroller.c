@@ -54,8 +54,8 @@ stroller_t *strl_create()
         goto err0;
     }
 
-    strl->chassis.mr = motor_create(MOTOR_CURRENT_OPEN);
-    strl->chassis.ml = motor_create(MOTOR_CURRENT_OPEN);
+    strl->chassis.mr = motor_create(MOTOR_CURRENT_OPEN, 1);
+    strl->chassis.ml = motor_create(MOTOR_CURRENT_OPEN, 2);
     strl->chassis.strg = strg_create();
     if (strl->chassis.mr == NULL || strl->chassis.ml == NULL || strl->chassis.strg == NULL) {
         log_error("Failed to create chassis");
