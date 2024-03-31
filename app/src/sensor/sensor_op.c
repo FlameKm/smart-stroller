@@ -1,18 +1,18 @@
 
 #include "sensor_op.h"
 
-int sensor_read(sensor_t *sensor, void *value, int size)
+int sensor_read(sensor_t *sensor, void *value, int channel)
 {
     if (sensor->op->read)
-        return sensor->op->read(sensor, value, size);
+        return sensor->op->read(sensor, value, channel);
     else
         return -1;
 }
 
-int sensor_ioctl(sensor_t *sensor, void *value, int size)
+int sensor_ioctl(sensor_t *sensor, int cmd, unsigned long arg)
 {
     if (sensor->op->ioctl)
-        return sensor->op->ioctl(sensor, value, size);
+        return sensor->op->ioctl(sensor, cmd, arg);
     else
         return -1;
 }

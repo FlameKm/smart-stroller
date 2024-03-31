@@ -17,12 +17,12 @@ static int sw180110p_deinit(sensor_t *sensor)
     return 0;
 }
 
-static int sw180110p_read(sensor_t *sensor, void *value, int size)
+static int sw180110p_read(sensor_t *sensor, void *value, int channel)
 {
     return 0;
 }
 
-static int sw180110p_ioctl(sensor_t *sensor, void *value, int size)
+static int sw180110p_ioctl(sensor_t *sensor,  int cmd, unsigned long arg)
 {
     return 0;
 }

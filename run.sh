@@ -49,16 +49,23 @@ app_compile() {
     fi
 
     if [ $? -eq 0 ]; then 
-        echo "\033[32app process complete.\033[0m"
+        echo "\033[32mapp process complete.\033[0m"
         return 0
     else
-        echo "\033[33app process failed.\033[0m"
+        echo "\033[31mapp process failed.\033[0m"
         return 1
     fi
 }
 
 dts_overlay_compile() {
     dtc -I dts -O dtb -o drivers/build/overlay.dtbo drivers/overlay.dts
+    if [ $? -eq 0 ]; then 
+        echo "\033[32mdts process complete.\033[0m"
+        return 0
+    else
+        echo "\033[31mdts process failed.\033[0m"
+        return 1
+    fi
     return $?
 }
 
@@ -72,7 +79,7 @@ drivers)
     rm ./drivers/build/*
     drives_compile &&
     dts_overlay_compile &&
-    scp_file drivers
+    scp_file drivers &&
     scp_file dtbos
     ;;
 

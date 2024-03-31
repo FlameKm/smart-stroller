@@ -1,8 +1,9 @@
 #include "sensor_op.h"
 #include <stdlib.h>
 #include "log.h"
+#include "hal_iic.h"
 
-int sensor_register(sensor_t *sensor, enum SENSOR_TYPE type)
+int sensor_register(sensor_t *sensor, enum SENSOR_TYPE type, void *custom)
 {
     int ret = 0;
     switch (type) {
@@ -12,9 +13,11 @@ int sensor_register(sensor_t *sensor, enum SENSOR_TYPE type)
         case SENSOR_TYPE_MQ135:
             ret = mq135_sensor_register(sensor);
             break;
-        case SENSOR_TYPE_DHT11:
-            ret = dht11_sensor_register(sensor);
+        case SENSOR_TYPE_AHT10:{
+            iic_dev_t *iic = (iic_dev_t *)custom;
+            ret = aht10_sensor_register(sensor, custom);
             break;
+        }
         case SENSOR_TYPE_SW180110P:
             ret = sw180110p_sensor_register(sensor);
             break;
@@ -28,7 +31,7 @@ int sensor_register(sensor_t *sensor, enum SENSOR_TYPE type)
     return ret;
 }
 
-sensor_t *sensor_create_with_register(enum SENSOR_TYPE type)
+sensor_t *sensor_create_with_register(enum SENSOR_TYPE type, void *custom)
 {
     sensor_t *sensor;
     int ret = 0;
@@ -36,7 +39,7 @@ sensor_t *sensor_create_with_register(enum SENSOR_TYPE type)
     if (sensor == NULL) {
         return NULL;
     }
-    ret = sensor_register(sensor, type);
+    ret = sensor_register(sensor, type, custom);
     if (ret < 0) {
         free(sensor);
         return NULL;

@@ -17,12 +17,12 @@ static int fake_deinit(sensor_t *sensor)
     return 0;
 }
 
-static int fake_read(sensor_t *sensor, void *value, int size)
+static int fake_read(sensor_t *sensor, void *value, int channel)
 {
     return 0;
 }
 
-static int fake_ioctl(sensor_t *sensor, void *value, int size)
+static int fake_ioctl(sensor_t *sensor,  int cmd, unsigned long arg)
 {
     return 0;
 }

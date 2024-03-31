@@ -10,9 +10,10 @@ extern "C" {
 #include "sensor.h"
 #include "steering_gear.h"
 #include "comm.h"
+#include "hal_iic.h"
 
 typedef struct stlr_sensor {
-    sensor_t *dht11;
+    sensor_t *aht10;
     sensor_t *mq135;
     sensor_t *sw180110p;
 } stlr_sensor_t;
@@ -38,6 +39,7 @@ typedef struct stroller {
     stlr_chassis_t chassis;
     stlr_sensor_t sensor;
     stlr_comm_t comm;
+    iic_dev_t *iic;
 } stroller_t;
 
 
