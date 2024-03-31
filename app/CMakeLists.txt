@@ -12,6 +12,7 @@ include_directories(
     include/actuator
     include/sensor
     include/comm
+    include/hal
     lib/log
 )
 
