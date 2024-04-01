@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include "log.h"
+#include "sensor.h"
 #include "sensor_op.h"
 #include "hal_iic.h"
 
@@ -18,6 +19,35 @@ typedef struct aht10_data {
     float temperature;
     float humidity;
 } aht10_data_t;
+
+static int aht10_measure(aht10_data_t *data)
+{
+    int ret;
+    uint8_t raw_data[6] = {0};
+    const uint8_t cmd_meas[] = {AHT10_CMD_MEAS, 0x33, 0x00};
+    uint32_t humi, temp;
+    ret = iic_write(data->iic, data->addr, cmd_meas, sizeof(cmd_meas));
+    if (ret < 0) {
+        log_warn("aht10 iic write error, ret %d", ret);
+        return -1;
+    }
+    ret = iic_read(data->iic, data->addr, raw_data, sizeof(raw_data));
+    if (ret < 0) {
+        log_warn("aht10 iic read error, ret %d", ret);
+        return -1;
+    }
+    if ((raw_data[0] & 0x80) == 0) {
+        log_warn("aht10 read error, status: %02x", raw_data[0]);
+        return -1;
+    }
+
+    humi = (raw_data[1] << 12) | (raw_data[2] << 4) | (raw_data[3] >> 4);
+    temp = ((raw_data[3] & 0X0F) << 16) | (raw_data[4] << 8) | (raw_data[5]);
+
+    data->humidity = humi * 100.0 / 1024 / 1024 + 0.5;
+    data->temperature = (temp * 2000.0 / 1024 / 1024 + 0.5) / 10.0 - 50;
+    return 0;
+}
 
 static int aht10_init(sensor_t *sensor)
 {
@@ -41,38 +71,32 @@ static int aht10_deinit(sensor_t *sensor)
     return 0;
 }
 
+
 static int aht10_read(sensor_t *sensor, void *value, int channel)
 {
+    int ret = 0;
     aht10_data_t *data = sensor->priv;
-    const uint8_t cmd_meas[] = {AHT10_CMD_MEAS, 0x33, 0x00};
-    uint8_t raw_data[6] = {0};
-    uint32_t humi, temp;
-
-    iic_write(data->iic, data->addr, cmd_meas, sizeof(cmd_meas));
-    iic_read(data->iic, data->addr, raw_data, sizeof(raw_data));
-
-    if((raw_data[0] & 0x80) == 0) {
-        log_error("aht10 read error, status: %02x", raw_data[0]);
-        return -1;
+    
+    if((channel & SENSOR_MEASURE_MASK) == SENSOR_MEASURE_ENABLE) {
+        ret = aht10_measure(data);
+        if (ret < 0) {
+            log_warn("aht10 measure error");
+            return -1;
+        }
     }
 
-    humi = (raw_data[1] << 12) | (raw_data[2] << 4) | (raw_data[3] >> 4);
-    temp = ((raw_data[3] & 0X0F) << 16) | (raw_data[4] << 8) | (raw_data[5]);
-
-    data->humidity = humi * 100.0 / 1024 / 1024 + 0.5;
-    data->temperature = (temp * 2000.0 / 1024 / 1024 + 0.5) / 10.0 - 50;
-
+    channel &= ~SENSOR_MEASURE_MASK;
     switch (channel) {
-        case 0:
+        case SENSOR_CHANNEL0:
             *(float *)value = data->temperature;
             break;
-        case 1:
+        case SENSOR_CHANNEL1:
             *(float *)value = data->humidity;
             break;
         default:
             return -1;
     }
-    return 0;
+    return ret;
 }
 
 static int aht10_ioctl(sensor_t *sensor, int cmd, unsigned long arg)

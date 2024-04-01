@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <pthread.h>
+
 typedef struct iic_dev {
     int fd;
     int bus;

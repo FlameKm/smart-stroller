@@ -7,6 +7,24 @@ extern "C" {
 
 #include "sensor_platfrom.h"
 
+
+#define SENSOR_CHANNEL0   0x0001
+#define SENSOR_CHANNEL1   0x0002
+#define SENSOR_CHANNEL2   0x0004
+#define SENSOR_CHANNEL3   0x0008
+#define SENSOR_CHANNEL4   0x0010
+#define SENSOR_CHANNEL5   0x0020
+#define SENSOR_CHANNEL6   0x0040
+#define SENSOR_CHANNEL7   0x0080
+#define SENSOR_CHANNEL_ALL   0x00FF
+#define SENSOR_CHANNEL_NONE   0x0000
+#define SENSOR_CHANNEL_DEFAULT   SENSOR_CHANNEL_ALL
+
+#define SENSOR_MEASURE_MASK    0x8000
+#define SENSOR_MEASURE_ENABLE  0x0000
+#define SENSOR_MEASURE_DISABLE 0x8000
+
+
 typedef struct sensor_op sensor_op_t;
 
 typedef struct sensor {

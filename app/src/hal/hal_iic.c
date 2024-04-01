@@ -36,6 +36,7 @@ iic_dev_t *iic_create(int bus)
 
 void iic_destroy(iic_dev_t *iic)
 {
+    pthread_mutex_destroy(&iic->lock);
     close(iic->fd);
     free(iic);
 }
@@ -44,14 +45,17 @@ int iic_write(iic_dev_t *iic, uint8_t addr, const uint8_t *buf, int len)
 {
     int ret = 0;
     pthread_mutex_lock(&iic->lock);
-    ret = ioctl(iic->fd, I2C_SLAVE, addr);
+    ret = ioctl(iic->fd, I2C_SLAVE_FORCE, addr);
     if (ret < 0) {
-        return -1;
+        ret = -1;
+        goto err;
     }
     ret = write(iic->fd, buf, len);
     if (ret < 0) {
-        return -1;
+        ret = -2;
+        goto err;
     }
+err:
     pthread_mutex_unlock(&iic->lock);
     return ret;
 }
@@ -63,12 +67,15 @@ int iic_read(iic_dev_t *iic, uint8_t addr, uint8_t *buf, int len)
     pthread_mutex_lock(&iic->lock);
     ret = ioctl(iic->fd, I2C_SLAVE, addr);
     if (ret < 0) {
-        return -1;
+        ret = -1;
+        goto err;
     }
     ret = read(iic->fd, buf, len);
     if (ret < 0) {
-        return -1;
+        ret = -2;
+        goto err;
     }
+err:
     pthread_mutex_unlock(&iic->lock);
     return 0;
 }

@@ -3,10 +3,11 @@
 //
 #include <signal.h>
 #include <stdio.h>
-#include "stroller.h"
 #include <stdbool.h>
 #include <unistd.h>
+
 #include "log.h"
+#include "stroller.h"
 
 bool contine = true;
 

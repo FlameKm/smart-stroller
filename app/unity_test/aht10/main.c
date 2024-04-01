@@ -1,7 +1,8 @@
+#include <unistd.h>
 #include "log.h"
 #include "hal_iic.h"
 #include "sensor.h"
-#include <unistd.h>
+#include "sensor_platfrom.h"
 
 int main()
 {
@@ -22,9 +23,9 @@ int main()
         log_error("sensor_register failed");
         return -1;
     }
-    ret = sensor_read(aht10, &temperature, 0);
-    usleep(1000);
-    ret |= sensor_read(aht10, &humidity, 1);
+    ret = sensor_read(aht10, &temperature, SENSOR_CHANNEL0 | SENSOR_MEASURE_ENABLE);
+    usleep(100 * 1000); // ! Need interval
+    ret |= sensor_read(aht10, &humidity, SENSOR_CHANNEL1 | SENSOR_MEASURE_DISABLE);
     if (ret < 0) {
         log_error("sensor_read failed");
         return -1;
