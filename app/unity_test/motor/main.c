@@ -13,8 +13,12 @@ int main()
     }
 
     for (int i = 0; i <= 10; i++) {
-        motor_set_speed(motor1, 100 * i);
-        motor_set_speed(motor2, 1000 - 100 * i);
+        int s1, s2;
+        s1 = 100 * i;
+        s2 = 1000 - 100 * i;
+        motor_set_speed(motor1, s1);
+        motor_set_speed(motor2, s2);
+        log_info("motor1 set to %d, motor2 set to %d", s1, s2);
         usleep(333 * 1000);
     }
     
