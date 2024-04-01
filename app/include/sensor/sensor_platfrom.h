@@ -21,6 +21,7 @@ int fake_sensor_register(sensor_t *sensor);
 int aht10_sensor_register(sensor_t *sensor, void *iic);
 int mq135_sensor_register(sensor_t *sensor);
 int sw180110p_sensor_register(sensor_t *sensor);
+int vl6180_sensor_register(sensor_t *sensor, void *iic, void *gpio_shut);
 
 #ifdef __cplusplus
 }

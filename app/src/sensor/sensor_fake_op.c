@@ -22,7 +22,7 @@ static int fake_read(sensor_t *sensor, void *value, int channel)
     return 0;
 }
 
-static int fake_ioctl(sensor_t *sensor,  int cmd, unsigned long arg)
+static int fake_config(sensor_t *sensor,  int cmd, unsigned long arg)
 {
     return 0;
 }
@@ -31,7 +31,7 @@ static const sensor_op_t fake_op = {
     .init = fake_init,
     .deinit = fake_deinit,
     .read = fake_read,
-    .ioctl = fake_ioctl,
+    .config = fake_config,
 };
 
 int fake_sensor_register(sensor_t *sensor)

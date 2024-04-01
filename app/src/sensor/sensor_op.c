@@ -9,10 +9,10 @@ int sensor_read(sensor_t *sensor, void *value, int channel)
         return -1;
 }
 
-int sensor_ioctl(sensor_t *sensor, int cmd, unsigned long arg)
+int sensor_config(sensor_t *sensor, int cmd, unsigned long arg)
 {
-    if (sensor->op->ioctl)
-        return sensor->op->ioctl(sensor, cmd, arg);
+    if (sensor->op->config)
+        return sensor->op->config(sensor, cmd, arg);
     else
         return -1;
 }

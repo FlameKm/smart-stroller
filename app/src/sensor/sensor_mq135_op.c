@@ -22,7 +22,7 @@ static int mq135_read(sensor_t *sensor, void *value, int channel)
     return 0;
 }
 
-static int mq135_ioctl(sensor_t *sensor,  int cmd, unsigned long arg)
+static int mq135_config(sensor_t *sensor,  int cmd, unsigned long arg)
 {
     return 0;
 }
@@ -31,7 +31,7 @@ static const sensor_op_t mq135_op = {
     .init = mq135_init,
     .deinit = mq135_deinit,
     .read = mq135_read,
-    .ioctl = mq135_ioctl,
+    .config = mq135_config,
 };
 
 int mq135_sensor_register(sensor_t *sensor)

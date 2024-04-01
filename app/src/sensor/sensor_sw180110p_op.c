@@ -22,7 +22,7 @@ static int sw180110p_read(sensor_t *sensor, void *value, int channel)
     return 0;
 }
 
-static int sw180110p_ioctl(sensor_t *sensor,  int cmd, unsigned long arg)
+static int sw180110p_config(sensor_t *sensor,  int cmd, unsigned long arg)
 {
     return 0;
 }
@@ -31,7 +31,7 @@ static const sensor_op_t sw180110p_op = {
     .init = sw180110p_init,
     .deinit = sw180110p_deinit,
     .read = sw180110p_read,
-    .ioctl = sw180110p_ioctl,
+    .config = sw180110p_config,
 };
 
 int sw180110p_sensor_register(sensor_t *sensor)

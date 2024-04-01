@@ -99,7 +99,7 @@ static int aht10_read(sensor_t *sensor, void *value, int channel)
     return ret;
 }
 
-static int aht10_ioctl(sensor_t *sensor, int cmd, unsigned long arg)
+static int aht10_config(sensor_t *sensor, int cmd, unsigned long arg)
 {
     return 0;
 }
@@ -108,7 +108,7 @@ static const sensor_op_t aht10_op = {
     .init = aht10_init,
     .deinit = aht10_deinit,
     .read = aht10_read,
-    .ioctl = aht10_ioctl,
+    .config = aht10_config,
 };
 
 int aht10_sensor_register(sensor_t *sensor, void *iic)

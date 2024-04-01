@@ -7,7 +7,7 @@ typedef struct sensor_op {
     int (*init)(sensor_t *sensor);
     int (*deinit)(sensor_t *sensor);
     int (*read)(sensor_t *sensor, void *value, int channel);
-    int (*ioctl)(sensor_t *sensor, int cmd, unsigned long arg);
+    int (*config)(sensor_t *sensor, int cmd, unsigned long arg);
 } sensor_op_t;
 
 #endif

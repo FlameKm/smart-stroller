@@ -24,6 +24,9 @@ extern "C" {
 #define SENSOR_MEASURE_ENABLE  0x0000
 #define SENSOR_MEASURE_DISABLE 0x8000
 
+#define SENSOR_START_MEASURE   0x4000
+#define SENSOR_CHEACK_MEASURE  0x0000
+
 
 typedef struct sensor_op sensor_op_t;
 
@@ -33,8 +36,8 @@ typedef struct sensor {
     const sensor_op_t *op;
 } sensor_t;
 
-int sensor_read(sensor_t *sensor, void *value, int channel);
-int sensor_ioctl(sensor_t *sensor,  int cmd, unsigned long arg);
+int sensor_read(sensor_t *sensor, void *value, int cmd);
+int sensor_config(sensor_t *sensor,  int cmd, unsigned long arg);
 int sensor_export(sensor_t *sensor);
 int sensor_unexport(sensor_t *sensor);
 
