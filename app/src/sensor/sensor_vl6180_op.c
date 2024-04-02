@@ -19,10 +19,14 @@ typedef struct vl6180_data {
     int dest_addr;
 } vl6180_data_t;
 
+static void st_vl6180_write(vl6180_data_t *data, uint16_t reg, uint8_t value)
+{
+    iic_reg16_write(data->iic, data->addr, reg, &value, 1);
+}
+
 static int vl6180_change_addr(vl6180_data_t *data, uint8_t to_addr)
 {
     int ret;
-    log_info("vl6180 address set to 0x%x", to_addr);
     ret = iic_reg16_write(data->iic, data->addr, 0x0212, &to_addr, 1);
     if (ret < 0) {
         return -1;
@@ -32,7 +36,9 @@ static int vl6180_change_addr(vl6180_data_t *data, uint8_t to_addr)
     if (recv != to_addr) {
         return -2;
     }
+
     data->addr = to_addr;
+    log_info("vl6180 address set to 0x%x", to_addr);
     return 0;
 }
 
@@ -40,7 +46,55 @@ static int vl6180_enable(vl6180_data_t *data)
 {
     int ret = 0;
     gpio_set_value(data->shut, 1);
+    usleep(100000);
     ret = vl6180_change_addr(data, data->dest_addr);
+    if (ret < 0) {
+        log_error("vl6180 change address failed");
+        return -1;
+    }
+
+    st_vl6180_write(data, 0X0207, 0X01);
+    st_vl6180_write(data, 0X0208, 0X01);
+    st_vl6180_write(data, 0X0096, 0X00);
+    st_vl6180_write(data, 0X0097, 0XFD);
+    st_vl6180_write(data, 0X00E3, 0X00);
+    st_vl6180_write(data, 0X00E4, 0X04);
+    st_vl6180_write(data, 0X00E5, 0X02);
+    st_vl6180_write(data, 0X00E6, 0X01);
+    st_vl6180_write(data, 0X00E7, 0X03);
+    st_vl6180_write(data, 0X00F5, 0X02);
+    st_vl6180_write(data, 0X00D9, 0X05);
+    st_vl6180_write(data, 0X00DB, 0XCE);
+    st_vl6180_write(data, 0X02DC, 0X03);
+    st_vl6180_write(data, 0X00DD, 0XF8);
+    st_vl6180_write(data, 0X009F, 0X00);
+    st_vl6180_write(data, 0X00A3, 0X3C);
+    st_vl6180_write(data, 0X00B7, 0X00);
+    st_vl6180_write(data, 0X00BB, 0X3C);
+    st_vl6180_write(data, 0X00B2, 0X09);
+    st_vl6180_write(data, 0X00CA, 0X09);
+    st_vl6180_write(data, 0X0198, 0X01);
+    st_vl6180_write(data, 0X01B0, 0X17);
+    st_vl6180_write(data, 0X01AD, 0X00);
+    st_vl6180_write(data, 0X00FF, 0X05);
+    st_vl6180_write(data, 0X0100, 0X05);
+    st_vl6180_write(data, 0X0199, 0X05);
+    st_vl6180_write(data, 0X01A6, 0X1B);
+    st_vl6180_write(data, 0X01AC, 0X3E);
+    st_vl6180_write(data, 0X01A7, 0X1F);
+    st_vl6180_write(data, 0X0030, 0X00);
+
+    st_vl6180_write(data, 0X0011, 0X10);
+    st_vl6180_write(data, 0X010A, 0X30);
+    st_vl6180_write(data, 0X003F, 0X46);
+    st_vl6180_write(data, 0X0031, 0XFF);
+    st_vl6180_write(data, 0X0040, 0X63);
+    st_vl6180_write(data, 0X002E, 0X01);
+    st_vl6180_write(data, 0X001B, 0X09);
+    st_vl6180_write(data, 0X003E, 0X31);
+    st_vl6180_write(data, 0X0014, 0X24);
+
+    st_vl6180_write(data, 0x016, 0x00);
     return ret;
 }
 
@@ -74,7 +128,7 @@ static int vl6180_check_measure_done(vl6180_data_t *data)
 {
     int ret = 0;
     uint8_t status, range_status;
-    ret = iic_reg16_read(data->iic, data->addr, 0x004f, &status, 1);
+    ret = iic_reg16_read(data->iic, data->addr, 0x04f, &status, 1);
     if (ret < 0) {
         return -1;
     }

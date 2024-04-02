@@ -1,3 +1,4 @@
+#include <signal.h>
 #include <stdint.h>
 #include <unistd.h>
 #include "log.h"
@@ -5,12 +6,21 @@
 #include "sensor.h"
 #include "sensor_platfrom.h"
 
+int contine = true;
+void stop(int signo)
+{
+    log_error("oops! stop!!!");
+    contine = false;
+}
+
 int main()
 {
     int ret;
     iic_dev_t *iic;
     sensor_t *vl61801, *vl61802;
     uint8_t distance1, distance2;
+    signal(SIGINT, stop);
+
     iic = iic_create(2);
     if (iic == NULL) {
         log_error("iic_create failed");
@@ -24,17 +34,19 @@ int main()
         return -1;
     }
     sensor_config(vl61801, SENSOR_ENABLE, NULL);
-    sensor_config(vl61801, SENSOR_START_MEASURE, NULL);
-    log_info("start measure");
-    usleep(100 * 1000);
 
-    int flag;
-    sensor_config(vl61801, SENSOR_CHEACK_MEASURE, (uint64_t)(&flag));
-    log_info("sensor cheack measure flag %d", flag);
+    while (contine) {
+        sensor_config(vl61801, SENSOR_START_MEASURE, NULL);
+        usleep(100);
 
-    sensor_read(vl61801, &distance1, SENSOR_MEASURE_DISABLE);
+        int flag;
+        sensor_config(vl61801, SENSOR_CHEACK_MEASURE, (uint64_t)(&flag));
 
-    log_info("distance1: %d distance2: %d", distance1, distance2);
+        sensor_read(vl61801, &distance1, SENSOR_MEASURE_DISABLE);
+        log_info("flag %d, distance1: %d distance2: %d", flag, distance1, distance2);
+        usleep(333 * 1000);
+    }
+
     sensor_destroy(vl61801);
     iic_destroy(iic);
     return 0;
