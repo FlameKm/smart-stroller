@@ -1,3 +1,5 @@
+#include "sensor_platfrom.h"
+#include "hal_gpio.h"
 #include "sensor_op.h"
 #include <stdlib.h>
 #include "log.h"
@@ -13,7 +15,7 @@ int sensor_register(sensor_t *sensor, enum SENSOR_TYPE type, void *custom)
         case SENSOR_TYPE_MQ135:
             ret = mq135_sensor_register(sensor);
             break;
-        case SENSOR_TYPE_AHT10:{
+        case SENSOR_TYPE_AHT10: {
             iic_dev_t *iic = (iic_dev_t *)custom;
             ret = aht10_sensor_register(sensor, custom);
             break;
@@ -21,12 +23,22 @@ int sensor_register(sensor_t *sensor, enum SENSOR_TYPE type, void *custom)
         case SENSOR_TYPE_SW180110P:
             ret = sw180110p_sensor_register(sensor);
             break;
+        case SENSOR_TYPE_VL6180_1: {
+            iic_dev_t *iic = (iic_dev_t *)custom;
+            ret = vl6180_sensor_register(sensor, iic, 74);
+            break;
+        }
+        case SENSOR_TYPE_VL6180_2: {
+            iic_dev_t *iic = (iic_dev_t *)custom;
+            ret = vl6180_sensor_register(sensor, iic, 233);
+            break;
+        }
         default:
             ret = -1;
             break;
     }
     if (!ret) {
-        sensor->op->init(sensor);
+        ret = sensor->op->init(sensor);
     }
     return ret;
 }

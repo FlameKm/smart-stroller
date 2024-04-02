@@ -27,6 +27,8 @@ extern "C" {
 #define SENSOR_START_MEASURE   0x4000
 #define SENSOR_CHEACK_MEASURE  0x0000
 
+#define SENSOR_ENABLE 0x2000
+#define SENSOR_DISABLE 0x1000
 
 typedef struct sensor_op sensor_op_t;
 
