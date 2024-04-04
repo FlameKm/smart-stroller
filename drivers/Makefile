@@ -17,8 +17,11 @@ KERN_DIR = /home/hyc/Project/hyc_orangepi/kernel
 
 all: 
 	make -C $(KERN_DIR) M=`pwd` modules 
+	$(CC) -o build/sw18015_test test/sw18015.c
 
 clean:
 	make -C $(KERN_DIR) M=`pwd` modules clean
+	rm -rf build/*
 
+obj-m += src/sw18015.o
 obj-m += src/motor.o
