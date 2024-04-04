@@ -13,7 +13,7 @@
 
     sw18015: yc_sw18015{
         compatible = "yc,sw18015";
-        AO-gpio = <74>;
+        AO-gpio = <71>;
     };
 };
 
