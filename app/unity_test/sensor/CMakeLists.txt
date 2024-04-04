@@ -1,7 +1,19 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(sensor)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-add_executable(sensor main.c)
+
+include_directories(${CMAKE_CURRENT_SOURCE_DIR} ../../include)
+
+
+file(GLOB_RECURSE PUBLIC_FILE 
+    ../../lib/*.c
+    ../../src/sensor/*.c
+    ../../src/hal/*.c
+) 
+
+project(aht10)
+add_executable(aht10 ${PUBLIC_FILE} aht10.c)
+project(sw18015)
+add_executable(sw18015 ${PUBLIC_FILE} sw18015.c)

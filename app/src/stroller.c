@@ -64,8 +64,8 @@ stroller_t *strl_create()
 
     strl->sensor.aht10 = sensor_create_with_register(SENSOR_TYPE_AHT10, strl->iic);
     strl->sensor.mq135 = sensor_create_with_register(SENSOR_TYPE_MQ135, NULL);
-    strl->sensor.sw180110p = sensor_create_with_register(SENSOR_TYPE_SW180110P, NULL);
-    if (strl->sensor.aht10 == NULL || strl->sensor.mq135 == NULL || strl->sensor.sw180110p == NULL) {
+    strl->sensor.sw18015 = sensor_create_with_register(SENSOR_TYPE_SW18015, NULL);
+    if (strl->sensor.aht10 == NULL || strl->sensor.mq135 == NULL || strl->sensor.sw18015 == NULL) {
         log_error("Failed to create sensor");
         goto err2;
     }
@@ -81,7 +81,7 @@ stroller_t *strl_create()
 err3:
     sensor_destroy(strl->sensor.aht10);
     sensor_destroy(strl->sensor.mq135);
-    sensor_destroy(strl->sensor.sw180110p);
+    sensor_destroy(strl->sensor.sw18015);
 err2:
     motor_destroy(strl->chassis.mr);
     motor_destroy(strl->chassis.ml);
@@ -98,7 +98,7 @@ void strl_destroy(stroller_t *strl)
 
     sensor_destroy(strl->sensor.aht10);
     sensor_destroy(strl->sensor.mq135);
-    sensor_destroy(strl->sensor.sw180110p);
+    sensor_destroy(strl->sensor.sw18015);
 
     motor_destroy(strl->chassis.mr);
     motor_destroy(strl->chassis.ml);
