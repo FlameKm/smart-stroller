@@ -2,12 +2,18 @@
 /plugin/;
 
 &{/}{
-    yc_motor: yc_motor{
+
+    motor: yc_motor{
         compatible = "yc,motor";
         #pwm-cells = <2>;
         motor-pwm = <1 0 2000>,
                     <2 0 2000>;
         status = "okay";
+    };
+
+    sw18015: yc_sw18015{
+        compatible = "yc,sw18015";
+        AO-gpio = <74>;
     };
 };
 
