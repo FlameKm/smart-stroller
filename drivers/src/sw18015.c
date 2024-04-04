@@ -1,5 +1,3 @@
-/* 写一个GPIO外部触发的驱动，实现poll异布通知 */
-
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/init.h>
@@ -59,9 +57,12 @@ static long sw18015_ioctl(struct file *file, unsigned int cmd, unsigned long arg
 {
     struct sw18015_data *data = container_of(file->private_data, struct sw18015_data, miscdev);
     switch (cmd) {
-        case SW18015_SHAKE_COUNT:
-            (void)copy_to_user((int *)arg, &data->event_flag, sizeof(int));
+        case SW18015_SHAKE_COUNT: {
+            long value = copy_to_user((int *)arg, &data->event_flag, sizeof(int));
+            if(value)
+                return -EFAULT;
             break;
+        }
         case SW18015_CLEAN:
             data->event_flag = 0;
             break;
@@ -105,8 +106,8 @@ static int sw18015_probe(struct platform_device *pdev)
         dev_err(dev, "Failed to request IRQ\n");
         return ret;
     }
-
-    timer_setup(&data->timer, sw18015_timer_handler, &data->timer);
+    timer_setup(&data->timer, sw18015_timer_handler, 0);
+    add_timer(&data->timer);
     init_waitqueue_head(&data->wait_queue);
     data->event_flag = 0;
 
@@ -128,7 +129,7 @@ static int sw18015_probe(struct platform_device *pdev)
 static int sw18015_remove(struct platform_device *pdev)
 {
     struct sw18015_data *data = platform_get_drvdata(pdev);
-
+    del_timer(&data->timer);
     misc_deregister(&data->miscdev);
 
     return 0;
