@@ -15,7 +15,7 @@ extern "C" {
 typedef struct stlr_sensor {
     sensor_t *aht10;
     sensor_t *mq135;
-    sensor_t *sw180110p;
+    sensor_t *sw18015;
 } stlr_sensor_t;
 
 typedef enum CHASSIS_MODE

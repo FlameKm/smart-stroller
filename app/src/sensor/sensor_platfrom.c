@@ -20,8 +20,8 @@ int sensor_register(sensor_t *sensor, enum SENSOR_TYPE type, void *custom)
             ret = aht10_sensor_register(sensor, custom);
             break;
         }
-        case SENSOR_TYPE_SW180110P:
-            ret = sw180110p_sensor_register(sensor);
+        case SENSOR_TYPE_SW18015:
+            ret = sw18015_sensor_register(sensor);
             break;
         case SENSOR_TYPE_VL6180_1: {
             iic_dev_t *iic = (iic_dev_t *)custom;

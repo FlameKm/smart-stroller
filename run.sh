@@ -13,8 +13,8 @@ app)
     scp -r ./app/build/app_test ${BOARD_USER_NAME}@${IP_TARGET}:~/
     ;;
 drivers)
-    scp ./drivers/build/*.ko ${BOARD_USER_NAME}@${IP_TARGET}:~
-    scp ./drivers/build/*test ${BOARD_USER_NAME}@${IP_TARGET}:~
+    scp ./drivers/build/*.ko ${BOARD_USER_NAME}@${IP_TARGET}:~/drivers/
+    scp ./drivers/build/*test ${BOARD_USER_NAME}@${IP_TARGET}:~/drivers/
     ;;
 dtbos)
     scp ./drivers/build/overlay.dtbo ${BOARD_USER_NAME}@${IP_TARGET}:~
@@ -77,7 +77,7 @@ app)
     ;;
 
 drivers)
-    rm ./drivers/build/*.k0 ./drivers/build/*test
+    rm ./drivers/build/*.ko ./drivers/build/*test
     drives_compile &&
     dts_overlay_compile &&
     scp_file drivers &&
