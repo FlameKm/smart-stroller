@@ -1,4 +1,4 @@
-#include <bits/pthreadtypes.h>
+#include <pthread.h>
 #include <stdlib.h>
 #include "log.h"
 #include "sensor.h"
@@ -21,17 +21,16 @@ void hlk2411_loop(hlk2411s_data_t *data)
 {
     char buffer[20];
     while (1) {
-        // 清除缓冲区
         int bytes_read = read(data->fd, buffer, sizeof(buffer));
         if (bytes_read > 0) {
             if (buffer[0] != 0xAA || buffer[1] != 0xAA || buffer[5] != 0x55 || buffer[6] != 0x55) {
-                log_warn("Failed to decode of hlk2411s\n");
+                log_warn("Failed to decode of hlk2411s");
                 continue;
             }
-            // pthread_mutex_lock(&data->lock);
+            pthread_mutex_lock(&data->lock);
             data->motion = buffer[2];
             data->distance = (buffer[4] << 8 | buffer[3]);
-            // pthread_mutex_unlock(&data->lock);
+            pthread_mutex_unlock(&data->lock);
         }
         usleep(100);
     }
@@ -41,19 +40,18 @@ static int hlk2411s_init(sensor_t *sensor)
 {
     hlk2411s_data_t *data;
     data = calloc(1, sizeof(hlk2411s_data_t));
+    if (data == NULL) {
+        return -1;
+    }
 
-    // Open the serial port
     data->fd = open("/dev/ttyS5", O_RDWR | O_NOCTTY | O_NDELAY);
     if (data->fd == -1) {
         log_error("Unable to open serial port");
         return -1;
     }
 
-    // Configure the serial port
-    struct termios options;// Structure to hold the serial port configuration options
-
-    tcgetattr(data->fd, &options);// Get the current attributes of the serial port
-
+    struct termios options;
+    tcgetattr(data->fd, &options);
     cfsetispeed(&options, 115200);                     // Set the input baud rate to 115200
     cfsetospeed(&options, 115200);                     // Set the output baud rate to 115200
     options.c_cflag |= (CLOCAL | CREAD);               // Enable receiver and set local mode
@@ -66,7 +64,7 @@ static int hlk2411s_init(sensor_t *sensor)
     options.c_oflag &= ~OPOST;                         // Disable output processing
     tcsetattr(data->fd, TCSANOW, &options);            // Set the new attributes of the serial port immediately
 
-    // pthread_mutex_init(&data->lock, NULL);
+    pthread_mutex_init(&data->lock, NULL);
     pthread_create(&data->thread, NULL, (void *)hlk2411_loop, data);
 
     sensor->priv = data;
@@ -76,7 +74,7 @@ static int hlk2411s_init(sensor_t *sensor)
 static int hlk2411s_deinit(sensor_t *sensor)
 {
     struct hlk2411s_data *data = sensor->priv;
-    // pthread_mutex_destroy(&data->lock);
+    pthread_mutex_destroy(&data->lock);
     pthread_cancel(data->thread);
     close(data->fd);
     free(sensor->priv);
@@ -86,7 +84,7 @@ static int hlk2411s_deinit(sensor_t *sensor)
 static int hlk2411s_read(sensor_t *sensor, void *value, int channel)
 {
     struct hlk2411s_data *data = sensor->priv;
-    // pthread_mutex_lock(&data->lock);
+    pthread_mutex_lock(&data->lock);
     switch (channel) {
         case SENSOR_CHANNEL0:
             *(uint8_t *)value = data->motion;
@@ -95,7 +93,7 @@ static int hlk2411s_read(sensor_t *sensor, void *value, int channel)
             *(uint16_t *)value = data->distance;
             break;
     }
-    // pthread_mutex_unlock(&data->lock);
+    pthread_mutex_unlock(&data->lock);
     return 0;
 }
 
