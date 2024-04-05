@@ -16,7 +16,8 @@
 #include <linux/uaccess.h>
 #include <linux/platform_device.h>
 #include <linux/of_device.h>
-#include <linux/pwm.h>
+#include <linux/gpio.h>
+#include <linux/hrtimer.h>
 
 #define DEVICE_NAME "yc-motor"
 
@@ -25,12 +26,21 @@
 #define MOTOR_START _IO('M', 2)
 #define MOTOR_STOP _IO('M', 3)
 
+enum PWM_STATE
+{
+    PWM_DISABLE = 0,
+    PWM_START,
+    PWM_RISING,
+    PWM_FALLING,
+};
+
 struct motor_data {
     uint32_t pwm_ch;
     uint32_t duty_us;
     uint32_t period_us;
-    struct pwm_device *pwm;
-
+    int gpio;
+    struct hrtimer timer;
+    uint16_t status;
     struct device *device;
 };
 
@@ -42,6 +52,37 @@ struct motor_dev {
     struct cdev cdev;
     struct class *class;
 };
+
+static int start_pwm_hrtimer(struct motor_data *data, enum PWM_STATE state, uint32_t delay_us)
+{
+    ktime_t ktime;
+    data->status = state;
+    ktime = ktime_set(0, delay_us * 1000);
+    hrtimer_start(&data->timer, ktime, HRTIMER_MODE_REL);
+    return 0;
+}
+
+enum hrtimer_restart pwm_hrtimer_handler(struct hrtimer *hrtimer)
+{
+    struct motor_data *data = container_of(hrtimer, struct motor_data, timer);
+    switch (data->status) {
+        case PWM_START:
+        case PWM_RISING:
+            gpio_set_value(data->gpio, 1);
+            start_pwm_hrtimer(data, PWM_FALLING, data->duty_us);
+            break;
+        case PWM_FALLING:
+            gpio_set_value(data->gpio, 0);
+            start_pwm_hrtimer(data, PWM_RISING, data->period_us - data->duty_us);
+            break;
+        case PWM_DISABLE:
+            gpio_set_value(data->gpio, 0);
+            return HRTIMER_NORESTART;
+        default:
+            break;
+    }
+    return HRTIMER_NORESTART;
+}
 
 static int motor_open(struct inode *node, struct file *file)
 {
@@ -61,23 +102,21 @@ static long motor_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 {
     int ret = 0;
     struct motor_data *data = file->private_data;
-
     switch (cmd) {
         case MOTOR_SET_SPEED: {
             ret = (int)copy_from_user((void *)&data->duty_us, (void *)arg, sizeof(data->duty_us));
-            pwm_config(data->pwm, data->duty_us * 1000, data->period_us * 1000);
             break;
         }
         case MOTOR_GET_SPEED: {
-            ret = (int)copy_to_user((void*)arg, &data->duty_us, sizeof(data->duty_us));
+            ret = (int)copy_to_user((void *)arg, &data->duty_us, sizeof(data->duty_us));
             break;
         }
         case MOTOR_START: {
-            pwm_enable(data->pwm);
+            start_pwm_hrtimer(data, PWM_START, 1000);
             break;
         }
         case MOTOR_STOP: {
-            pwm_disable(data->pwm);
+            start_pwm_hrtimer(data, PWM_DISABLE, 1000);
             break;
         }
         default:
@@ -131,6 +170,17 @@ err1:
     return -1;
 }
 
+static int pwm_to_gpio(int pwm)
+{
+    int gpio_pin = 0;
+    switch (pwm) {
+        case 1: gpio_pin = 231; break;
+        case 2: gpio_pin = 232; break;
+        default: return 0;
+    }
+    return gpio_pin;
+}
+
 static int motor_probe(struct platform_device *pdev)
 {
     int ret = 0;
@@ -167,25 +217,24 @@ static int motor_probe(struct platform_device *pdev)
             dev_err(&pdev->dev, "Failed to of property read 'motor-pwm'\n");
             goto err3;
         }
-       dev_info(&pdev->dev, "pwm %d, duty %d, period %d\n", data[i].pwm_ch, data[i].duty_us, data[i].period_us);
-        // char pwm_name[6];
-        // snprintf(pwm_name, 6, "motor%d", i);
-        data[i].pwm = pwm_request(data[i].pwm_ch, "motor");
-        if (IS_ERR(data[i].pwm)) {
-            dev_err(&pdev->dev, "Failed to request pwm %d\n", i);
+        dev_info(&pdev->dev, "pwm %d, duty %d, period %d\n", data[i].pwm_ch, data[i].duty_us, data[i].period_us);
+        data[i].gpio = pwm_to_gpio(data[i].pwm_ch);
+        if (!data->gpio) {
+            dev_err(&pdev->dev, "Failed to get gpio\n");
             goto err3;
         }
-        pwm_config(data[i].pwm, data[i].duty_us * 1000, data[i].period_us * 1000);
-        pwm_enable(data[i].pwm);
+        data[i].status = PWM_DISABLE;
+        gpio_request(data[i].gpio, "gpio");
+        gpio_direction_output(data[i].gpio, 0);
+        gpio_set_value(data[i].gpio, 0);
+        hrtimer_init(&data[i].timer, CLOCK_REALTIME, HRTIMER_MODE_REL);
+        data[i].timer.function = pwm_hrtimer_handler;
+        hrtimer_start( &data[i].timer, ktime_set(0, 1000), HRTIMER_MODE_REL);
     }
 
     platform_set_drvdata(pdev, dev);
     return 0;
 
-    for (int i = 0; i < num; i++) {
-        pwm_disable(dev->data[i].pwm);
-        pwm_free(dev->data[i].pwm);
-    }
 err3:
     class_destroy(dev->class);
     cdev_del(&dev->cdev);
@@ -202,9 +251,9 @@ static int motor_remove(struct platform_device *pdev)
 {
     struct motor_dev *dev = platform_get_drvdata(pdev);
     for (int i = 0; i < dev->num; i++) {
+        gpio_free(dev->data[i].gpio);
+        hrtimer_cancel(&dev->data[i].timer);
         device_destroy(dev->class, dev->dev + i);
-        pwm_disable(dev->data[i].pwm);
-        pwm_free(dev->data[i].pwm);
     }
 
     class_destroy(dev->class);
