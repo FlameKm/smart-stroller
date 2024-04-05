@@ -15,6 +15,7 @@ typedef enum SENSOR_TYPE
     SENSOR_TYPE_SW18015,
     SENSOR_TYPE_VL6180_1,
     SENSOR_TYPE_VL6180_2,
+    SENSOR_TYPE_HLK2411S,
 } SENSOR_TYPE;
 
 typedef struct sensor sensor_t;
@@ -24,6 +25,7 @@ int aht10_sensor_register(sensor_t *sensor, void *iic);
 int mq135_sensor_register(sensor_t *sensor);
 int sw18015_sensor_register(sensor_t *sensor);
 int vl6180_sensor_register(sensor_t *sensor, void *iic, int gpio_port);
+int hlk2411s_sensor_register(sensor_t *sensor);
 
 #ifdef __cplusplus
 }
