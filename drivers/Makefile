@@ -26,3 +26,4 @@ clean:
 obj-m += src/sw18015.o
 obj-m += src/motor.o
 obj-m += src/motor-spwm.o
+obj-m += src/servo.o

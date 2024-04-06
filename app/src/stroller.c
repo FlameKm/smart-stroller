@@ -56,8 +56,8 @@ stroller_t *strl_create()
 
     strl->chassis.mr = motor_create(MOTOR_CURRENT_OPEN, 1);
     strl->chassis.ml = motor_create(MOTOR_CURRENT_OPEN, 2);
-    strl->chassis.strg = strg_create();
-    if (strl->chassis.mr == NULL || strl->chassis.ml == NULL || strl->chassis.strg == NULL) {
+    strl->chassis.servo = servo_create();
+    if (strl->chassis.mr == NULL || strl->chassis.ml == NULL || strl->chassis.servo == NULL) {
         log_error("Failed to create chassis");
         goto err1;
     }
@@ -85,7 +85,7 @@ err3:
 err2:
     motor_destroy(strl->chassis.mr);
     motor_destroy(strl->chassis.ml);
-    strg_destroy(strl->chassis.strg);
+    servo_destroy(strl->chassis.servo);
 err1:
     free(strl);
 err0:
@@ -102,7 +102,7 @@ void strl_destroy(stroller_t *strl)
 
     motor_destroy(strl->chassis.mr);
     motor_destroy(strl->chassis.ml);
-    strg_destroy(strl->chassis.strg);
+    servo_destroy(strl->chassis.servo);
 
     free(strl);
 }

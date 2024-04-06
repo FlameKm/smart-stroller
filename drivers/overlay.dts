@@ -6,12 +6,18 @@
     motor: yc_motor{
         compatible = "yc,motor";
         #pwm-cells = <2>;
-        motor-pwm = <1 0 2000>,
-                    <2 0 2000>;
+        motor-pwm = <1 0 2000>, //pin-231
+                    <2 0 2000>; //pin-232
         status = "okay";
     };
-
+    servo: yc_servo{
+        #signal-gpio-cells = <0>;
+        compatible = "yc,servo";
+        signal-gpio = <230>;
+        status = "okay";
+    };
     sw18015: yc_sw18015{
+        #AO-gpio-cell = <0>;
         compatible = "yc,sw18015";
         AO-gpio = <71>;
     };

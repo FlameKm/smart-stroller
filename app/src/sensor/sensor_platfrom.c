@@ -16,7 +16,6 @@ int sensor_register(sensor_t *sensor, enum SENSOR_TYPE type, void *custom)
             ret = mq135_sensor_register(sensor);
             break;
         case SENSOR_TYPE_AHT10: {
-        case SENSOR_TYPE_AHT10: {
             iic_dev_t *iic = (iic_dev_t *)custom;
             ret = aht10_sensor_register(sensor, custom);
             break;

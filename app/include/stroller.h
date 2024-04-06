@@ -8,7 +8,7 @@ extern "C" {
 
 #include "motor.h"
 #include "sensor.h"
-#include "steering_gear.h"
+#include "servo.h"
 #include "comm.h"
 #include "hal_iic.h"
 
@@ -28,7 +28,7 @@ typedef struct stlr_chassis {
     enum CHASSIS_MODE mode;
     motor_t *ml;
     motor_t *mr;
-    strg_t *strg;
+    servo_t *servo;
 } stlr_chassis_t;
 
 typedef struct stlr_comm {
