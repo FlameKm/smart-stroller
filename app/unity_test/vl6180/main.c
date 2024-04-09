@@ -33,21 +33,40 @@ int main()
         log_error("sensor_create failed");
         return -1;
     }
-    sensor_config(vl61801, SENSOR_ENABLE, NULL);
+    ret = sensor_config(vl61801, SENSOR_ENABLE, 0);
+    ret = sensor_config(vl61802, SENSOR_ENABLE, 0);
+
 
     while (contine) {
-        sensor_config(vl61801, SENSOR_START_MEASURE, NULL);
+        ret = sensor_config(vl61801, SENSOR_START_MEASURE, 0);
+        ret |= sensor_config(vl61802, SENSOR_START_MEASURE, 0);
+        if (ret < 0) {
+            log_error("sensor_config SENSOR_START_MEASURE failed");
+            break;
+        }
         usleep(100);
 
-        int flag;
-        sensor_config(vl61801, SENSOR_CHEACK_MEASURE, (uint64_t)(&flag));
+        int flag1, flag2;
+        ret = sensor_config(vl61801, SENSOR_CHEACK_MEASURE, (uint64_t)(&flag1));
+        ret |= sensor_config(vl61802, SENSOR_CHEACK_MEASURE, (uint64_t)(&flag2));
+        if (ret < 0) {
+            log_error("sensor_config SENSOR_CHEACK_MEASURE failed");
+            break;
+        }
 
-        sensor_read(vl61801, &distance1, SENSOR_MEASURE_DISABLE);
-        log_info("flag %d, distance1: %d distance2: %d", flag, distance1, distance2);
+        ret = sensor_read(vl61801, &distance1, SENSOR_MEASURE_DISABLE);
+        ret |= sensor_read(vl61802, &distance2, SENSOR_MEASURE_DISABLE);
+        if (ret < 0) {
+            log_error("sensor_read failed");
+            break;
+        }
+
+        log_info("flag %d %d, distance1: %d distance2: %d", flag1, flag2, distance1, distance2);
         usleep(333 * 1000);
     }
 
     sensor_destroy(vl61801);
+    sensor_destroy(vl61802);
     iic_destroy(iic);
     return 0;
 }

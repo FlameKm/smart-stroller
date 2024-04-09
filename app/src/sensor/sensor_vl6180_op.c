@@ -27,6 +27,9 @@ static void st_vl6180_write(vl6180_data_t *data, uint16_t reg, uint8_t value)
 static int vl6180_change_addr(vl6180_data_t *data, uint8_t to_addr)
 {
     int ret;
+    if(data->addr == to_addr) {
+        return 0;
+    }
     ret = iic_reg16_write(data->iic, data->addr, 0x0212, &to_addr, 1);
     if (ret < 0) {
         return -1;
@@ -38,7 +41,7 @@ static int vl6180_change_addr(vl6180_data_t *data, uint8_t to_addr)
     }
 
     data->addr = to_addr;
-    log_info("vl6180 address set to 0x%x", to_addr);
+    log_info("vl6180 address set to 0x%x", data->dest_addr);
     return 0;
 }
 
@@ -112,7 +115,7 @@ static int vl6180_start_measure(vl6180_data_t *data)
     return ret;
 }
 
-static int vl6180_read_measure(vl6180_data_t *data, uint16_t *value)
+static int vl6180_read_measure(vl6180_data_t *data, uint8_t *value)
 {
     int ret = 0;
     uint8_t read = 0;
@@ -142,12 +145,19 @@ static int vl6180_check_measure_done(vl6180_data_t *data)
 static int vl6180_init(sensor_t *sensor)
 {
     struct vl6180_data *data = sensor->priv;
+    int ret = 0;
     data->shut = gpio_create(data->port, GPIO_DIRECTION_OUT);
     if (data->shut == NULL) {
         return -1;
     }
     data->addr = iic_addr[0];
     data->dest_addr = iic_addr[++device_cnt];
+    ret = vl6180_enable(data);
+    if(ret < 0) {
+        log_warn("Failed to enable vl6180 0x%x", data->addr);
+        return -1;
+    }
+    log_debug("vl6180 try to enable to return %d", ret);
     return 0;
 }
 
@@ -163,7 +173,7 @@ static int vl6180_deinit(sensor_t *sensor)
 static int vl6180_read(sensor_t *sensor, void *value, int channel)
 {
     struct vl6180_data *data = sensor->priv;
-    uint16_t read;
+    uint8_t read;
 
     switch (channel) {
         case SENSOR_MEASURE_ENABLE:
@@ -183,7 +193,7 @@ static int vl6180_read(sensor_t *sensor, void *value, int channel)
         return -1;
     }
 
-    *(int *)value = read;
+    *(uint8_t *)value = read;
     return 0;
 }
 
@@ -193,20 +203,21 @@ static int vl6180_config(sensor_t *sensor, int cmd, unsigned long arg)
     struct vl6180_data *data = sensor->priv;
     switch (cmd) {
         case SENSOR_START_MEASURE:
-            vl6180_start_measure(data);
+            ret = vl6180_start_measure(data);
             break;
         case SENSOR_CHEACK_MEASURE:
-            ret = vl6180_check_measure_done(data);
+            vl6180_check_measure_done(data);
             *(int *)arg = ret;
+            ret = 0;
             break;
         case SENSOR_ENABLE:
-            vl6180_enable(data);
+            ret = vl6180_enable(data);
             break;
         case SENSOR_DISABLE:
-            vl6180_disable(data);
+            ret = vl6180_disable(data);
             break;
     }
-    return 0;
+    return ret;
 }
 
 static const sensor_op_t vl6180_op = {
