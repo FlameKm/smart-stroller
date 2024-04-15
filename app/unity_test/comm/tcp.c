@@ -1,5 +1,6 @@
 #include <signal.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <pthread.h>
@@ -20,14 +21,18 @@ char rbuf[100];
 void handle_client(void *tcps)
 {
     // 返回原数据和加密过的数据
-    printf("rec: %s\n", rbuf);
-    tcp_write(tcps, rbuf, sizeof(rbuf));//echo back
+    int len = strlen(rbuf);
+    printf("rec[%d]: %s\n", len, rbuf);
+    // tcp_write(tcps, rbuf, sizeof(rbuf));//echo back
     tcp_write(tcps, ": ", 2);
-    char sendbuf[100];
-    for (int i = 0; i < sizeof(rbuf); i++) {
+    char sendbuf[100] = {0};
+    for (int i = 0; i < len; i++) {
         sendbuf[i] = rbuf[i] + 1;
     }
-    tcp_write(tcps, sendbuf, sizeof(sendbuf));
+    sendbuf[len] = '\n';
+    printf("send >> %s\n", sendbuf);
+    tcp_write(tcps, sendbuf, len + 1);
+    // memset(rbuf, 0, sizeof(rbuf));
 }
 
 void *client_thread(void *arg)
@@ -48,6 +53,9 @@ loop:
             log_debug("Close connection from client");
             goto loop;
         }
+        else if (ret == TIMEOUT_RET) {
+            continue;
+        }
         else if (ret < 0) {
             return NULL;
         }
@@ -55,11 +63,15 @@ loop:
     return NULL;
 }
 
-int main()
+int main(int argv, char **argc)
 {
     tcp_server_t server;
     int port = 8888;
     int ret;
+
+    if (argv == 2) {
+        port = strtol(argc[1], NULL, 10);
+    }
 
     signal(SIGINT, sig_handler);
 

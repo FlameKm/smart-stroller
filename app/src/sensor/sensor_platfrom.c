@@ -1,13 +1,12 @@
 #include "sensor_platfrom.h"
-#include "hal_gpio.h"
 #include "sensor_op.h"
 #include <stdlib.h>
-#include "log.h"
 #include "hal_iic.h"
 
 int sensor_register(sensor_t *sensor, enum SENSOR_TYPE type, void *custom)
 {
     int ret = 0;
+    sensor->enabled = false;
     switch (type) {
         case SENSOR_TYPE_FAKE:
             ret = fake_sensor_register(sensor);
@@ -42,6 +41,7 @@ int sensor_register(sensor_t *sensor, enum SENSOR_TYPE type, void *custom)
     }
     if (!ret) {
         ret = sensor->op->init(sensor);
+        sensor->enabled = true;
     }
     return ret;
 }
@@ -69,4 +69,9 @@ void sensor_destroy(sensor_t *sensor)
     }
     sensor->op->deinit(sensor);
     free(sensor);
+}
+
+int sensor_is_enabled(sensor_t *sensor)
+{
+    return sensor->enabled;
 }

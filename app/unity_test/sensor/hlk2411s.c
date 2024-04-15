@@ -9,11 +9,23 @@
 #include "log.h"
 #include "sensor.h"
 #include "sensor_platfrom.h"
+#include <signal.h>
 
 typedef struct hlk2411 {
     uint8_t motion;
     uint16_t distance;
 } hlk2411_t;
+
+
+bool is_stop = false;
+
+void sig_handler(int signo)
+{
+    if (signo == SIGINT) {
+        log_info("received SIGINT");
+        is_stop = true;
+    }
+}
 
 int nopack()
 {
@@ -75,12 +87,13 @@ int main()
 {
     sensor_t *sensor;
     hlk2411_t data;
+    signal(SIGINT, sig_handler);
     sensor = sensor_create_with_register(SENSOR_TYPE_HLK2411S, NULL);
     if (sensor == NULL) {
         log_error("Failed to create sensor\n");
         return -1;
     }
-    while (1) {
+    while (!is_stop) {
         sensor_read(sensor, &data.motion, SENSOR_CHANNEL0);
         sensor_read(sensor, &data.distance, SENSOR_CHANNEL1);
         log_info("motion: %d, distance: %d", data.motion, data.distance);

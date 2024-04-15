@@ -3,6 +3,8 @@
 
 #include <netinet/in.h>
 
+#define TIMEOUT_RET 0xffffffff
+
 typedef void (*client_handler)(void *tcps);
 
 typedef struct tcp_server {

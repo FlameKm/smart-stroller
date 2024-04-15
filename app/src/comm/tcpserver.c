@@ -31,6 +31,7 @@ int tcp_read(tcp_server_t *tcps, char *buf, int len)
 
 /* 
 return value:
+    TIMEOUT_RET: poll error
     > 0: number of bytes read
     = 0: connection closed
     < 0: error
@@ -51,7 +52,7 @@ int tcp_read_timeout(tcp_server_t *tcps, char *buf, int len, int ms)
         }
     }
     else if(ret == 0) { 
-        return -1;  // poll timeout
+        return TIMEOUT_RET;  // poll timeout
     }
     return ret;
 }

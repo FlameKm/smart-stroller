@@ -76,8 +76,8 @@ static int aht10_read(sensor_t *sensor, void *value, int channel)
 {
     int ret = 0;
     aht10_data_t *data = sensor->priv;
-    
-    if((channel & SENSOR_MEASURE_MASK) == SENSOR_MEASURE_ENABLE) {
+
+    if ((channel & SENSOR_MEASURE_MASK) == SENSOR_MEASURE_ENABLE) {
         ret = aht10_measure(data);
         if (ret < 0) {
             log_warn("aht10 measure error");
@@ -101,7 +101,17 @@ static int aht10_read(sensor_t *sensor, void *value, int channel)
 
 static int aht10_config(sensor_t *sensor, int cmd, unsigned long arg)
 {
-    return 0;
+    int ret = 0;
+    aht10_data_t *data = sensor->priv;
+    switch (cmd) {
+        case SENSOR_START_MEASURE:
+            ret = aht10_measure(data);
+            break;
+        case SENSOR_CHEACK_MEASURE:
+            *(int *)arg = 0;
+            break;
+    }
+    return ret;
 }
 
 static const sensor_op_t aht10_op = {

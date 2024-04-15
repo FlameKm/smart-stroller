@@ -22,14 +22,14 @@ int main()
     int ret = 0;
     stroller_t *strl;
 
-    strl = strl_create();
+    strl = stlr_create();
     if (strl == NULL) {
         return -1;
     }
     log_info("stroller init ok");
 
     signal(SIGINT, stop);
-    ret = strl_start_loop(strl);
+    ret = stlr_start_loop(strl);
     if (ret) {
         contine = false;
     }
@@ -38,6 +38,7 @@ int main()
     while (contine)
         pause();
 
-    strl_destroy(strl);
+    stlr_stop();
+    stlr_destroy(strl);
     log_info("stroller destroy");
 }

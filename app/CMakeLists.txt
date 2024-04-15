@@ -13,6 +13,7 @@ include_directories(
     include/sensor
     include/comm
     include/hal
+    lib/
     lib/log
 )
 
