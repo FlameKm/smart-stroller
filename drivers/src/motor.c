@@ -139,7 +139,7 @@ static int motor_probe(struct platform_device *pdev)
     struct motor_data *data;
     int num = 0;
 
-    dev = devm_kmalloc(&pdev->dev, sizeof(struct motor_data), GFP_KERNEL);
+    dev = devm_kmalloc(&pdev->dev, sizeof(struct motor_dev), GFP_KERNEL);
     if (!dev) {
         dev_err(&pdev->dev, "Failed to allocate memory\n");
         goto err0;

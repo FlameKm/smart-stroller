@@ -2,7 +2,6 @@
 /plugin/;
 
 &{/}{
-
     motor: yc_motor{
         compatible = "yc,motor";
         #pwm-cells = <2>;
@@ -11,39 +10,14 @@
         status = "okay";
     };
     servo: yc_servo{
-        #signal-gpio-cells = <0>;
         compatible = "yc,servo";
         signal-gpio = <230>;
         status = "okay";
     };
     sw18015: yc_sw18015{
-        #AO-gpio-cell = <0>;
         compatible = "yc,sw18015";
         AO-gpio = <71>;
+        status = "okay";
     };
 };
 
-&uart5{
-    status = "okay";
-};
-
-&i2c3{
-    #address-cells = <1>;
-    #size-cells = <0>;
-    status = "okay";
-    aht10@38 {
-        compatible = "aht10";
-        reg = <0x38>;
-        status = "disabled";
-    };
-    vl6180@29 {
-        compatible = "st,vl6180";
-        reg = <0x29>;
-        status = "disabled";
-    };
-    vl61802@59 {
-        compatible = "st,vl6180";
-        reg = <0x59>;
-        status = "disabled";
-    };
-};

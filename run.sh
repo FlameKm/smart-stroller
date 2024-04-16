@@ -1,4 +1,4 @@
-IP_TARGET="192.168.1.78"
+IP_TARGET="192.168.1.10"
 BOARD_USER_NAME="root"
 ARCH="arm64"
 CROSS_COMPILE="/home/hyc/Project/orangepi-build/toolchains/gcc-arm-11.2-2022.02-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-"

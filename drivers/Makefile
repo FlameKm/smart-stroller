@@ -9,11 +9,10 @@ AR 		= $(CROSS_COMPILE)ar
 STRIP 	= $(CROSS_COMPILE)strip
 LD 		= $(CROSS_COMPILE)ld
 
-KERN_DIR = /home/hyc/Project/hyc_orangepi/kernel
+# KERN_DIR = /home/hyc/Project/hyc_orangepi/kernel
+KERN_DIR = /home/hyc/Project/orangepi-build/kernel/orange-pi-5.4-sun50iw9
 
-# INCLUDE_DIR = ../inc/
-
-# CFLAGS = -Wall -I$(INCLUDE_DIR)
+ccflags-y := -std=gnu99 -Wno-declaration-after-statement
 
 all: 
 	make -C $(KERN_DIR) M=`pwd` modules 
@@ -23,6 +22,7 @@ clean:
 	make -C $(KERN_DIR) M=`pwd` modules clean
 	rm -rf build/*
 
+obj-m += src/hello.o
 obj-m += src/sw18015.o
 obj-m += src/motor.o
 obj-m += src/motor-spwm.o

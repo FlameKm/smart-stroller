@@ -21,7 +21,7 @@
 
 #define DEVICE_NAME "yc-motor"
 
-#define MOTOR_SET_SPEED _IO('M', 0) //uint32_t
+#define MOTOR_SET_SPEED _IO('M', 0)//uint32_t
 #define MOTOR_GET_SPEED _IO('M', 1)
 #define MOTOR_START _IO('M', 2)
 #define MOTOR_STOP _IO('M', 3)
@@ -189,7 +189,7 @@ static int motor_probe(struct platform_device *pdev)
     struct motor_data *data;
     int num = 0;
 
-    dev = devm_kmalloc(&pdev->dev, sizeof(struct motor_data), GFP_KERNEL);
+    dev = devm_kmalloc(&pdev->dev, sizeof(struct motor_dev), GFP_KERNEL);
     if (!dev) {
         dev_err(&pdev->dev, "Failed to allocate memory\n");
         goto err0;
@@ -229,7 +229,7 @@ static int motor_probe(struct platform_device *pdev)
         gpio_set_value(data[i].gpio, 0);
         hrtimer_init(&data[i].timer, CLOCK_REALTIME, HRTIMER_MODE_REL);
         data[i].timer.function = pwm_hrtimer_handler;
-        hrtimer_start( &data[i].timer, ktime_set(0, 1000), HRTIMER_MODE_REL);
+        hrtimer_start(&data[i].timer, ktime_set(0, 1000), HRTIMER_MODE_REL);
     }
 
     platform_set_drvdata(pdev, dev);
@@ -242,7 +242,6 @@ err3:
 err2:
     kfree(dev->data);
 err1:
-    devm_kfree(&pdev->dev, dev);
 err0:
     return -1;
 }

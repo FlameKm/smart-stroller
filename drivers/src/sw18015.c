@@ -9,7 +9,6 @@
 #include <linux/of.h>
 #include <linux/of_gpio.h>
 #include <linux/platform_device.h>
-#include <linux/container_of.h>
 #include <linux/timer.h>
 
 #define DEVICE_NAME "sw18015"
