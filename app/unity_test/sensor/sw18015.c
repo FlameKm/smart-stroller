@@ -23,13 +23,12 @@ int main()
     int shake;
 
     signal(SIGINT, sig_handler);
-
     sw18015 = sensor_create_with_register(SENSOR_TYPE_SW18015, NULL);
-
-    if (ret < 0) {
+    if (sw18015 == NULL) {
         log_error("sensor_register failed");
         return -1;
     }
+
     while (!is_stop) {
         ret = sensor_read(sw18015, &shake, SENSOR_CHANNEL_DEFAULT);
         if (ret < 0) {

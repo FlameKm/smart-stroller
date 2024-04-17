@@ -12,7 +12,7 @@ int main()
     float temperature;
     float humidity;
 
-    iic = iic_create(2);
+    iic = iic_create(3);
     if(iic == NULL)
     {
         log_error("iic_create failed");

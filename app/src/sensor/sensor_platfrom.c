@@ -41,7 +41,7 @@ int sensor_register(sensor_t *sensor, enum SENSOR_TYPE type, void *custom)
     }
     if (!ret) {
         ret = sensor->op->init(sensor);
-        sensor->enabled = true;
+        sensor->enabled = ret == 0 ? true : false;
     }
     return ret;
 }
