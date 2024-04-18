@@ -39,6 +39,7 @@ typedef struct stlr_sensor {
 
 typedef enum STLR_MODE
 {
+    STLR_MODE_NONE,
     STLR_MODE_AUTO,
     STLR_MODE_REMOTE,
 } STLR_MODE;
@@ -85,7 +86,7 @@ typedef struct stroller {
 
 stroller_t *stlr_create();
 void stlr_destroy(stroller_t *strl);
-int stlr_start_loop(stroller_t *strl);
+int stlr_start(stroller_t *strl);
 void stlr_stop();
 
 #ifdef __cplusplus

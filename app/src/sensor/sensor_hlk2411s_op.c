@@ -4,10 +4,13 @@
 #include "sensor.h"
 #include "sensor_op.h"
 #include <fcntl.h>
+#include <string.h>
 #include <sys/ioctl.h>
 #include <stdint.h>
 #include <termios.h>
 #include <unistd.h>
+
+#define SERIAL_DEV "/dev/ttyAS5"
 
 typedef struct hlk2411s_data {
     int fd;
@@ -21,7 +24,9 @@ void hlk2411_loop(hlk2411s_data_t *data)
 {
     char buffer[20];
     while (1) {
-        int bytes_read = read(data->fd, buffer, sizeof(buffer));
+        memset(buffer, 0, sizeof(buffer));
+        int bytes_read = read(data->fd, buffer, 7);
+        // log_debug("cnt %d, 0:0x%x, 1:0x%x, 2:0x%x, 3:0x%x, 4:0x%x, 5:0x%x, 6:0x%x", bytes_read, buffer[0], buffer[1], buffer[2], buffer[3], buffer[4], buffer[5], buffer[6]);
         if (bytes_read > 0) {
             if (buffer[0] != 0xAA || buffer[1] != 0xAA || buffer[5] != 0x55 || buffer[6] != 0x55) {
                 log_warn("Failed to decode of hlk2411s");
@@ -44,7 +49,7 @@ static int hlk2411s_init(sensor_t *sensor)
         return -1;
     }
 
-    data->fd = open("/dev/ttyS5", O_RDWR | O_NOCTTY | O_NDELAY);
+    data->fd = open(SERIAL_DEV, O_RDWR | O_NOCTTY | O_NDELAY);
     if (data->fd == -1) {
         log_error("Unable to open serial port");
         return -1;

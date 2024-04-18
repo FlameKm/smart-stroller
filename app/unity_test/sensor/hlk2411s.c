@@ -97,7 +97,7 @@ int main()
         sensor_read(sensor, &data.motion, SENSOR_CHANNEL0);
         sensor_read(sensor, &data.distance, SENSOR_CHANNEL1);
         log_info("motion: %d, distance: %d", data.motion, data.distance);
-        sleep(1);
+        usleep(100 * 1000);
     }
 
     sensor_destroy(sensor);

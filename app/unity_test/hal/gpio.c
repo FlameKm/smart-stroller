@@ -23,14 +23,14 @@ int main()
     }
 
     int value;
-    value = gpio_get_value(gpio233);
     gpio_set_value(gpio74, 1);
+    value = gpio_get_value(gpio233);
     log_info("gpio233 value = %d and gpio74 value set to 1", value);
     log_info( "pleass waiting 1s");
     sleep(1);
 
-    value = gpio_get_value(gpio233);
     gpio_set_value(gpio74, 0);
+    value = gpio_get_value(gpio233);
     log_info("gpio233 value = %d and gpio74 value set to 0", value);
 
     gpio_destroy(gpio74);

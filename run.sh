@@ -19,6 +19,10 @@ drivers)
 dtbos)
     scp ./drivers/build/overlay.dtbo ${BOARD_USER_NAME}@${IP_TARGET}:~
     ;;
+script)
+    chmod +x ./script/*
+    scp ./script/* ${BOARD_USER_NAME}@${IP_TARGET}:~
+    chmod -x ./script/*
 esac
 }
 
@@ -73,7 +77,8 @@ dts_overlay_compile() {
 case $1 in
 app)
     app_compile && 
-    scp_file app
+    scp_file app &&
+    scp_file script
     ;;
 
 drivers)

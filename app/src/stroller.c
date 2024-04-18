@@ -7,15 +7,27 @@
 
 #define TCP_SERVER_PORT 8888
 #define TCP_SERVER_IP "0.0.0.0"
-#define USE_IIC_BUS 2
+#define USE_IIC_BUS 3
+#define MOTOR_ID_RIGHT 0
+#define MOTOR_ID_LEFT 1
 
 static int is_stop = 0;
+
+static bool stlr_is_automatable(stroller_t *stlr)
+{
+    stlr_sensor_t *sensor = &stlr->sensor;
+    if (sensor_is_enabled(sensor->aht10) && sensor_is_enabled(sensor->mq135) && sensor_is_enabled(sensor->sw18015)) {
+        return true;
+    }
+    return false;
+}
 static void *sensor_loop(void *ptr)
 {
     int ret = 0;
     stroller_t *stlr = ptr;
     stlr_sensor_t *sensor = &stlr->sensor;
-    float temp, humi, co2, shake;
+    float temp, humi, co2;
+    int shake;
     while (!is_stop) {
         ret = sensor_config(sensor->aht10, SENSOR_START_MEASURE, 0);
         ret |= sensor_read(sensor->aht10, &temp, SENSOR_CHANNEL0);
@@ -36,6 +48,8 @@ static void *sensor_loop(void *ptr)
             log_warn("Failed to read sw18015");
         }
 
+        log_debug("sensor read temp:%.1f, humi:%.1f, co2:%.1f, shake:%d", temp, humi, co2, shake);
+
         pthread_mutex_lock(&sensor->mutex);
         sensor->available = true;
         sensor->temp = temp;
@@ -51,28 +65,56 @@ static void *sensor_loop(void *ptr)
 
 static void *stlr_follow_loop(void *ptr)
 {
+    int ret;
     stroller_t *stlr = ptr;
-    stlr_chassis_t *chassis = &stlr->chassis;
     while (!is_stop) {
         pthread_mutex_lock(&stlr->follow_mutex);
         switch (stlr->mode) {
             case STLR_MODE_AUTO:
                 // todo: Auto control
-                usleep(20 * 2000);
+                {
+                    static int cnt = 0;
+                    if (++cnt % 1000) {
+                        uint16_t distance_f;
+                        uint8_t motion, distance_l, distance_r;
+                        ret = sensor_config(stlr->sensor.hlk2411s, SENSOR_START_MEASURE, 0);
+                        ret |= sensor_config(stlr->sensor.vl6180_l, SENSOR_START_MEASURE, 0);
+                        ret |= sensor_config(stlr->sensor.vl6180_r, SENSOR_START_MEASURE, 0);
+                        usleep(10);
+                        if (!ret) {
+                            ret = sensor_read(stlr->sensor.hlk2411s, &motion, SENSOR_CHANNEL0);
+                            ret |= sensor_read(stlr->sensor.hlk2411s, &distance_f, SENSOR_CHANNEL1);
+                            ret |= sensor_read(stlr->sensor.vl6180_l, &distance_l, SENSOR_CHANNEL0);
+                            ret |= sensor_read(stlr->sensor.vl6180_r, &distance_r, SENSOR_CHANNEL0);
+                        }
+                        if (!ret) {
+                            log_debug("motion:%d, distance_f:%d, distance_l:%d, distance_r:%d", motion, distance_f, distance_l, distance_r);
+                        }
+                    }
+                }
+                pthread_mutex_unlock(&stlr->follow_mutex);
+                usleep(500 * 1000);
                 break;
             case STLR_MODE_REMOTE:
                 pthread_cond_wait(&stlr->follow_cond, &stlr->follow_mutex);
+                pthread_mutex_unlock(&stlr->follow_mutex);
+                break;
+            case STLR_MODE_NONE:
+                pthread_cond_wait(&stlr->follow_cond, &stlr->follow_mutex);
+                pthread_mutex_unlock(&stlr->follow_mutex);
                 break;
             default:
                 log_error("not find chassic mode %d", stlr->mode);
+                pthread_cond_wait(&stlr->follow_cond, &stlr->follow_mutex);
+                pthread_mutex_unlock(&stlr->follow_mutex);
                 break;
         }
-        pthread_mutex_unlock(&stlr->follow_mutex);
     }
     return NULL;
 }
 
-// Timing: 0xAA 0xBB cmd_h cmd_l data_h data_l 0x00 0x22
+// Timing: y%d %d %dc
+// todo: add checksum
 static void comm_receive_callback(void *tcps)
 {
     int ret = 0;
@@ -80,42 +122,45 @@ static void comm_receive_callback(void *tcps)
     stlr_comm_t *comm = &stlr->comm;
     stlr_chassis_t *chassis = &stlr->chassis;
     int len = strlen(comm->rbuf);
-    log_info("rec[%d]: %s", len, comm->rbuf);
-
-    if (len != 8) {
-        log_error("Invalid data length %d", len);
-        return;
+    log_debug("rec[%d]: %s", len, comm->rbuf);
+    if (len == 0 || comm->rbuf[0] != 'y' || comm->rbuf[len - 1] != 'c') {
+        log_error("comm invalid data");
+        goto clear;
     }
-    int cmd = (comm->rbuf[2] << 8) | comm->rbuf[3];
-    int data = (comm->rbuf[4] << 8) | comm->rbuf[5];
+
+    char *p = comm->rbuf + 1;
+    int cmd = strtol(p, &p, 10);
+    int data1 = strtol(p, &p, 10);
+    int data2 = strtol(p, &p, 10);
     switch (cmd) {
         case COMM_COMMAND_STOP:
-            log_debug("comm stop, ret:%d, data:%d", ret, data);
+            log_debug("comm stop, ret:%d, data:%d %d", ret, data1, data2);
             break;
         case COMM_COMMAND_FORWARD:
-            log_debug("comm forward, ret:%d, data:%d", ret, data);
+            log_debug("comm forward, ret:%d, data:%d %d", ret, data1, data2);
             break;
         case COMM_COMMAND_BACKWARD:
-            log_debug("comm backward, ret:%d, data:%d", ret, data);
+            log_debug("comm backward, ret:%d, data:%d %d", ret, data1, data2);
             break;
         case COMM_COMMAND_LEFT:
-            log_debug("comm left, ret:%d, data:%d", ret, data);
+            log_debug("comm left, ret:%d, data:%d %d", ret, data1, data2);
             break;
         case COMM_COMMAND_RIGHT:
-            log_debug("comm right, ret:%d, data:%d", ret, data);
+            log_debug("comm right, ret:%d, data:%d %d", ret, data1, data2);
             break;
         case COMM_COMMAND_ACTION_MODE:
             pthread_mutex_lock(&stlr->follow_mutex);
-            stlr->mode = data == 0 ? STLR_MODE_AUTO : STLR_MODE_REMOTE;
+            stlr->mode = (data1 == 0) ? STLR_MODE_AUTO : STLR_MODE_REMOTE;
             pthread_cond_signal(&stlr->follow_cond);
             pthread_mutex_unlock(&stlr->follow_mutex);
-            log_debug("comm auto, ret:%d, data:%d", ret, data);
+            log_debug("comm auto, ret:%d, data:%d", ret, data1);
             break;
         default:
             log_error("comm invalid command %d", cmd);
             break;
     }
 
+clear:
     memset(comm->rbuf, 0, sizeof(comm->rbuf));
 }
 
@@ -132,15 +177,17 @@ start_listen:
     if (ret < 0) {
         perror("accept");
     }
-    log_debug("accept client connect");
+    log_info("accept client connect");
     while (!is_stop) {
-        // sync read, it will callback when read success.
+        // sync read, it will callback when read success in the current thread.
+        // log_error("test");
         ret = tcp_read_timeout(tcps, comm->rbuf, sizeof(comm->rbuf), 100);
         if (ret == 0) {
-            log_debug("Close connection from client");
+            log_info("Close connection from client");
             goto start_listen;
         }
         else if (ret == TIMEOUT_RET) {
+            /* Not something to do */
             // continue;
         }
         else if (ret < 0) {
@@ -149,37 +196,52 @@ start_listen:
 
         pthread_mutex_lock(&sensor->mutex);
         if (sensor->available) {
+            int size;
             // todo: pack sensor data to sendbuf
+            snprintf(comm->sbuf, sizeof(comm->sbuf), "temp:%.1f, humi:%.1f, co2:%.1f, shake:%d\n", sensor->temp, sensor->humi, sensor->co2, sensor->shake);
             sensor->available = false;
+
+            pthread_mutex_unlock(&sensor->mutex);
+
+            size = strlen(comm->sbuf);
+            if (size != 0) {
+                tcp_write(tcps, comm->sbuf, strlen(comm->sbuf));
+            }
         }
-        pthread_mutex_unlock(&sensor->mutex);
-        tcp_write(tcps, comm->sbuf, strlen(comm->sbuf));
+        else {
+            pthread_mutex_unlock(&sensor->mutex);
+        }
     }
     tcp_stop_server(tcps);
     return NULL;
 }
 
-int stlr_start_loop(stroller_t *stlr)
+int stlr_start(stroller_t *stlr)
 {
     int ret = 0;
+
+    stlr->mode = STLR_MODE_REMOTE;
 
     ret = pthread_create(&stlr->sensor_thread, NULL, sensor_loop, stlr);
     if (ret) {
         log_error("Failed to create sensor thread");
         goto err;
     }
+    log_info("stlr sensor thread created");
 
     ret = pthread_create(&stlr->comm_thread, NULL, comm_loop, stlr);
     if (ret) {
         log_error("Failed to create comm thread");
         goto err;
     }
+    log_info("stlr comm thread created");
 
     ret = pthread_create(&stlr->follow_thread, NULL, stlr_follow_loop, stlr);
     if (ret) {
         log_error("Failed to create follow thread");
         goto err;
     }
+    log_info("stlr follow thread created");
 
     return 0;
 
@@ -191,40 +253,58 @@ int stlr_sensor_create(stroller_t *stlr)
 {
     stlr->sensor.aht10 = sensor_create_with_register(SENSOR_TYPE_AHT10, stlr->iic);
     if (stlr->sensor.aht10 == NULL) {
-        log_warn("Failed to create aht10");
+        log_warn("Failed to create aht10, use fake sensor instead.");
         stlr->sensor.aht10 = sensor_create_with_register(SENSOR_TYPE_FAKE, NULL);
+    }
+    else {
+        log_info("stlr sensor aht10 created");
     }
 
     stlr->sensor.mq135 = sensor_create_with_register(SENSOR_TYPE_MQ135, NULL);
     if (stlr->sensor.mq135 == NULL) {
-        log_warn("Failed to create mq135");
+        log_warn("Failed to create mq135, use fake sensor instead.");
         stlr->sensor.mq135 = sensor_create_with_register(SENSOR_TYPE_FAKE, NULL);
+    }
+    else {
+        log_info("stlr sensor mq135 created");
     }
 
     stlr->sensor.sw18015 = sensor_create_with_register(SENSOR_TYPE_SW18015, NULL);
     if (stlr->sensor.sw18015 == NULL) {
-        log_warn("Failed to create sw18015");
+        log_warn("Failed to create sw18015, use fake sensor instead.");
         stlr->sensor.sw18015 = sensor_create_with_register(SENSOR_TYPE_FAKE, NULL);
+    }
+    else {
+        log_info("stlr sensor sw18015 created");
     }
 
     /* It is necessary to create a sensor for the distance of the 
     front, left and right sides. */
     stlr->sensor.hlk2411s = sensor_create_with_register(SENSOR_TYPE_HLK2411S, NULL);
     if (stlr->sensor.hlk2411s == NULL) {
-        log_error("Failed to create hlk2411s");
-        return -1;
+        log_warn("Failed to create hlk2411s, use fake sensor instead.");
+        stlr->sensor.hlk2411s = sensor_create_with_register(SENSOR_TYPE_FAKE, NULL);
+    }
+    else {
+        log_info("stlr sensor hlk2411s created");
     }
 
     stlr->sensor.vl6180_l = sensor_create_with_register(SENSOR_TYPE_VL6180_1, stlr->iic);
     if (stlr->sensor.vl6180_l == NULL) {
-        log_error("Failed to create vl6180_l");
-        return -1;
+        log_warn("Failed to create vl6180_l, use fake sensor instead.");
+        stlr->sensor.vl6180_l = sensor_create_with_register(SENSOR_TYPE_FAKE, NULL);
+    }
+    else {
+        log_info("stlr sensor vl6180_l created");
     }
 
     stlr->sensor.vl6180_r = sensor_create_with_register(SENSOR_TYPE_VL6180_2, stlr->iic);
     if (stlr->sensor.vl6180_r == NULL) {
-        log_error("Failed to create vl6180_r");
-        return -1;
+        log_warn("Failed to create vl6180_r, use fake sensor instead.");
+        stlr->sensor.vl6180_r = sensor_create_with_register(SENSOR_TYPE_FAKE, NULL);
+    }
+    else {
+        log_info("stlr sensor vl6180_r created");
     }
 
     pthread_mutex_init(&stlr->sensor.mutex, NULL);
@@ -252,8 +332,8 @@ stroller_t *stlr_create()
         goto err0;
     }
 
-    stlr->chassis.mr = motor_create(MOTOR_CURRENT_OPEN, 1);
-    stlr->chassis.ml = motor_create(MOTOR_CURRENT_OPEN, 2);
+    stlr->chassis.mr = motor_create(MOTOR_CURRENT_OPEN, MOTOR_ID_RIGHT);
+    stlr->chassis.ml = motor_create(MOTOR_CURRENT_OPEN, MOTOR_ID_LEFT);
     stlr->chassis.servo = servo_create();
     if (stlr->chassis.mr == NULL || stlr->chassis.ml == NULL || stlr->chassis.servo == NULL) {
         log_error("Failed to create chassis");
@@ -261,9 +341,14 @@ stroller_t *stlr_create()
     }
 
     stlr->iic = iic_create(USE_IIC_BUS);
+    if (stlr->iic == NULL) {
+        log_error("Failed to create iic");
+        goto err2;
+    }
+
     ret = stlr_sensor_create(stlr);
     if (ret) {
-        log_error("Failed to init sensor");
+        log_warn("Failed to init sensor");
         goto err2;
     }
 
@@ -274,7 +359,10 @@ stroller_t *stlr_create()
     // }
     ret = tcp_start_server(&stlr->comm.tcps, TCP_SERVER_IP, TCP_SERVER_PORT);
     if (ret != 0) {
-        log_warn("Failed to start server on port %d", TCP_SERVER_PORT);
+        log_error("Failed to start server on port %d", TCP_SERVER_PORT);
+    }
+    else {
+        log_info("tcp server started on port %d", TCP_SERVER_PORT);
     }
     tcp_set_client_handler(&stlr->comm.tcps, comm_receive_callback);
 
@@ -288,6 +376,7 @@ err2:
     motor_destroy(stlr->chassis.mr);
     motor_destroy(stlr->chassis.ml);
     servo_destroy(stlr->chassis.servo);
+    iic_destroy(stlr->iic);
 err1:
     free(stlr);
 err0:

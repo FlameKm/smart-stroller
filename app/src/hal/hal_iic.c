@@ -36,6 +36,9 @@ iic_dev_t *iic_create(int bus)
 
 void iic_destroy(iic_dev_t *iic)
 {
+    if (iic == NULL) {
+        return;
+    }
     pthread_mutex_destroy(&iic->lock);
     close(iic->fd);
     free(iic);
