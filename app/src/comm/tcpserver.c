@@ -49,10 +49,12 @@ int tcp_read_timeout(tcp_server_t *tcps, char *buf, int len, int ms)
             if (ret > 0 && tcps->handler) {
                 tcps->handler(tcps);
             }
+            else {
+            }
         }
     }
-    else if(ret == 0) { 
-        return TIMEOUT_RET;  // poll timeout
+    else if (ret == 0) {
+        return TIMEOUT_RET;// poll timeout
     }
     return ret;
 }
@@ -63,10 +65,14 @@ int tcp_wait_for_client(tcp_server_t *tcps, int timeout)
     fd_set readfds;
     struct sockaddr_in addr;
     socklen_t addrlen = sizeof(addr);
+    struct timeval tv = {timeout, 0};
+
+    tcps->connected = false;
+
     if (timeout == 0) {
         timeout = INT32_MAX;
     }
-    struct timeval tv = {timeout, 0};
+    tv.tv_sec = timeout;
 
     FD_ZERO(&readfds);
     FD_SET(tcps->sockfd, &readfds);
@@ -78,12 +84,18 @@ int tcp_wait_for_client(tcp_server_t *tcps, int timeout)
     else {
         return -1;
     }
+    tcps->connected = true;
     return ret;
 }
 
 void tcp_set_client_handler(tcp_server_t *tcps, client_handler handler)
 {
     tcps->handler = handler;
+}
+
+bool tcp_is_connected(tcp_server_t *tcps)
+{
+    return tcps->connected;
 }
 
 int tcp_start_server(tcp_server_t *tcps, const char *addr, int port)
@@ -110,6 +122,8 @@ int tcp_start_server(tcp_server_t *tcps, const char *addr, int port)
         perror("listen");
         return -1;
     }
+
+    tcps->connected = false;
 
     return ret;
 }

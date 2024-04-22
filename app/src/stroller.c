@@ -21,12 +21,41 @@ static bool stlr_is_automatable(stroller_t *stlr)
     }
     return false;
 }
+
+static int stlr_comm_send(stroller_t *stlr, char *buf, int len)
+{
+    stlr_comm_t *comm = &stlr->comm;
+    tcp_server_t *tcps = &comm->tcps;
+
+    if (len > sizeof(comm->sbuf)) {
+        log_error("comm send buffer overflow");
+        return -1;
+    }
+
+    if (!tcp_is_connected(tcps)) {
+        return -1;
+    }
+
+    pthread_mutex_lock(&comm->send_lock);
+    /* Use queue to save buf in future*/
+    if (strlen(comm->sbuf) != 0) {
+        log_warn("comm send not ready");
+        pthread_mutex_unlock(&comm->send_lock);
+        return -1;
+    }
+
+    memcpy(comm->sbuf, buf, len);
+    pthread_mutex_unlock(&comm->send_lock);
+    return 0;
+}
+
 static void *sensor_loop(void *ptr)
 {
     int ret = 0;
     stroller_t *stlr = ptr;
     stlr_sensor_t *sensor = &stlr->sensor;
     float temp, humi, co2;
+    char buf[100];
     int shake;
     while (!is_stop) {
         ret = sensor_config(sensor->aht10, SENSOR_START_MEASURE, 0);
@@ -48,7 +77,7 @@ static void *sensor_loop(void *ptr)
             log_warn("Failed to read sw18015");
         }
 
-        log_debug("sensor read temp:%.1f, humi:%.1f, co2:%.1f, shake:%d", temp, humi, co2, shake);
+        // log_debug("sensor read temp:%.1f, humi:%.1f, co2:%.1f, shake:%d", temp, humi, co2, shake);
 
         pthread_mutex_lock(&sensor->mutex);
         sensor->available = true;
@@ -56,11 +85,49 @@ static void *sensor_loop(void *ptr)
         sensor->humi = humi;
         sensor->co2 = co2;
         sensor->shake = shake;
+        snprintf(buf, sizeof(buf), "temp:%.1f, humi:%.1f, co2:%.1f, shake:%d\n", sensor->temp, sensor->humi, sensor->co2, sensor->shake);
+        stlr_comm_send(stlr, buf, strlen(buf));
         pthread_mutex_unlock(&sensor->mutex);
 
-        sleep(1);
+        sleep(5);
     }
     return NULL;
+}
+
+static int remote_move(stroller_t *stlr, COMM_COMMAND cmd, int data1, int data2)
+{
+    int ret = 0;
+    stlr_chassis_t *chassis = &stlr->chassis;
+    switch (cmd) {
+        case COMM_CMD_STOP:
+            // todo.
+            log_debug("remote stop");
+            break;
+        case COMM_CMD_FORWARD:
+            // todo.
+            log_debug("remote forward");
+            break;
+        case COMM_CMD_BACKWARD:
+            // todo.
+            log_debug("remote backward");
+            break;
+        case COMM_CMD_LEFT:
+            // todo.
+            log_debug("remote left");
+            break;
+        case COMM_CMD_RIGHT:
+            // todo.
+            log_debug("remote right");
+            break;
+        case COMM_CMD_NONE:
+            /* Not something to do */
+            break;
+        default:
+            log_error("not find remote command %d", cmd);
+            ret = -1;
+            break;
+    }
+    return ret;
 }
 
 static void *stlr_follow_loop(void *ptr)
@@ -96,6 +163,10 @@ static void *stlr_follow_loop(void *ptr)
                 usleep(500 * 1000);
                 break;
             case STLR_MODE_REMOTE:
+                ret = remote_move(stlr, stlr->follow_cmd, stlr->follow_data[0], stlr->follow_data[1]);
+                if (ret < 0) {
+                    log_error("Invalid remote command cmd:%d, data1:%d, data2:%d", stlr->follow_cmd, stlr->follow_data[0], stlr->follow_data[1]);
+                }
                 pthread_cond_wait(&stlr->follow_cond, &stlr->follow_mutex);
                 pthread_mutex_unlock(&stlr->follow_mutex);
                 break;
@@ -113,7 +184,7 @@ static void *stlr_follow_loop(void *ptr)
     return NULL;
 }
 
-// Timing: y%d %d %dc
+// Timing: y%d(cmd) %d(data1) %d(data2) %d(checksum)c
 // todo: add checksum
 static void comm_receive_callback(void *tcps)
 {
@@ -124,7 +195,7 @@ static void comm_receive_callback(void *tcps)
     int len = strlen(comm->rbuf);
     log_debug("rec[%d]: %s", len, comm->rbuf);
     if (len == 0 || comm->rbuf[0] != 'y' || comm->rbuf[len - 1] != 'c') {
-        log_error("comm invalid data");
+        log_error("comm invalid data \"%s\"", comm->rbuf);
         goto clear;
     }
 
@@ -132,28 +203,32 @@ static void comm_receive_callback(void *tcps)
     int cmd = strtol(p, &p, 10);
     int data1 = strtol(p, &p, 10);
     int data2 = strtol(p, &p, 10);
+    int checksum = strtol(p, &p, 10);
+    if (cmd + data1 + data2 != checksum) {
+        log_error("comm checksum error");
+        goto clear;
+    }
     switch (cmd) {
-        case COMM_COMMAND_STOP:
-            log_debug("comm stop, ret:%d, data:%d %d", ret, data1, data2);
+        case COMM_CMD_STOP:
+        case COMM_CMD_FORWARD:
+        case COMM_CMD_BACKWARD:
+        case COMM_CMD_LEFT:
+        case COMM_CMD_RIGHT:
+            pthread_mutex_lock(&stlr->follow_mutex);
+            stlr->follow_cmd = cmd;
+            stlr->follow_data[0] = data1;
+            stlr->follow_data[1] = data2;
+            pthread_mutex_unlock(&stlr->follow_mutex);
+            log_debug("comm remote, cmd:%d, data:%d %d", cmd, data1, data2);
             break;
-        case COMM_COMMAND_FORWARD:
-            log_debug("comm forward, ret:%d, data:%d %d", ret, data1, data2);
-            break;
-        case COMM_COMMAND_BACKWARD:
-            log_debug("comm backward, ret:%d, data:%d %d", ret, data1, data2);
-            break;
-        case COMM_COMMAND_LEFT:
-            log_debug("comm left, ret:%d, data:%d %d", ret, data1, data2);
-            break;
-        case COMM_COMMAND_RIGHT:
-            log_debug("comm right, ret:%d, data:%d %d", ret, data1, data2);
-            break;
-        case COMM_COMMAND_ACTION_MODE:
+        case COMM_CMD_ACTION_MODE:
             pthread_mutex_lock(&stlr->follow_mutex);
             stlr->mode = (data1 == 0) ? STLR_MODE_AUTO : STLR_MODE_REMOTE;
+            stlr->follow_cmd = COMM_CMD_STOP;
             pthread_cond_signal(&stlr->follow_cond);
             pthread_mutex_unlock(&stlr->follow_mutex);
             log_debug("comm auto, ret:%d, data:%d", ret, data1);
+            stlr_comm_send(stlr, "ok\n", 3);
             break;
         default:
             log_error("comm invalid command %d", cmd);
@@ -194,23 +269,14 @@ start_listen:
             break;
         }
 
-        pthread_mutex_lock(&sensor->mutex);
-        if (sensor->available) {
-            int size;
-            // todo: pack sensor data to sendbuf
-            snprintf(comm->sbuf, sizeof(comm->sbuf), "temp:%.1f, humi:%.1f, co2:%.1f, shake:%d\n", sensor->temp, sensor->humi, sensor->co2, sensor->shake);
-            sensor->available = false;
-
-            pthread_mutex_unlock(&sensor->mutex);
-
-            size = strlen(comm->sbuf);
-            if (size != 0) {
-                tcp_write(tcps, comm->sbuf, strlen(comm->sbuf));
-            }
+        pthread_mutex_lock(&comm->send_lock);
+        int len = strlen(comm->sbuf);
+        if (len) {
+            tcp_write(tcps, comm->sbuf, len);
+            memset(comm->sbuf, 0, sizeof(comm->sbuf));
         }
-        else {
-            pthread_mutex_unlock(&sensor->mutex);
-        }
+        pthread_mutex_unlock(&comm->send_lock);
+        // todo: tcp send buffer
     }
     tcp_stop_server(tcps);
     return NULL;
@@ -220,7 +286,7 @@ int stlr_start(stroller_t *stlr)
 {
     int ret = 0;
 
-    stlr->mode = STLR_MODE_REMOTE;
+    stlr->mode = STLR_MODE_NONE;
 
     ret = pthread_create(&stlr->sensor_thread, NULL, sensor_loop, stlr);
     if (ret) {
@@ -365,6 +431,8 @@ stroller_t *stlr_create()
         log_info("tcp server started on port %d", TCP_SERVER_PORT);
     }
     tcp_set_client_handler(&stlr->comm.tcps, comm_receive_callback);
+    pthread_mutex_init(&stlr->comm.send_lock, NULL);
+    memset(stlr->comm.sbuf, 0, sizeof(stlr->comm.sbuf));
 
     pthread_mutex_init(&stlr->follow_mutex, NULL);
     pthread_cond_init(&stlr->follow_cond, NULL);

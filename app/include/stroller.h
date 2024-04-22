@@ -53,12 +53,13 @@ typedef struct stlr_chassis {
 
 typedef enum COMM_COMMAND
 {
-    COMM_COMMAND_STOP,
-    COMM_COMMAND_FORWARD,
-    COMM_COMMAND_BACKWARD,
-    COMM_COMMAND_LEFT,
-    COMM_COMMAND_RIGHT,
-    COMM_COMMAND_ACTION_MODE,
+    COMM_CMD_NONE,
+    COMM_CMD_STOP,
+    COMM_CMD_FORWARD,
+    COMM_CMD_BACKWARD,
+    COMM_CMD_LEFT,
+    COMM_CMD_RIGHT,
+    COMM_CMD_ACTION_MODE,
 } COMM_COMMAND;
 
 typedef struct stlr_comm {
@@ -66,6 +67,7 @@ typedef struct stlr_comm {
     tcp_server_t tcps;
     char rbuf[100];
     char sbuf[100];
+    pthread_mutex_t send_lock;
 } stlr_comm_t;
 
 typedef struct stroller {
@@ -75,12 +77,15 @@ typedef struct stroller {
     iic_dev_t *iic;
 
     enum STLR_MODE mode;
-    pthread_cond_t follow_cond;//todo: init
+    pthread_cond_t follow_cond;
     pthread_mutex_t follow_mutex;
 
     pthread_t sensor_thread;
     pthread_t comm_thread;
     pthread_t follow_thread;
+
+    int follow_cmd;
+    int follow_data[2];
 } stroller_t;
 
 
