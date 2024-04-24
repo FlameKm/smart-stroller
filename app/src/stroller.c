@@ -8,8 +8,6 @@
 #define TCP_SERVER_PORT 8888
 #define TCP_SERVER_IP "0.0.0.0"
 #define USE_IIC_BUS 3
-#define MOTOR_ID_RIGHT 0
-#define MOTOR_ID_LEFT 1
 
 static int is_stop = 0;
 
@@ -175,7 +173,7 @@ static void *stlr_follow_loop(void *ptr)
                 pthread_mutex_unlock(&stlr->follow_mutex);
                 break;
             default:
-                log_error("not find chassic mode %d", stlr->mode);
+                log_error("not find chassis mode %d", stlr->mode);
                 pthread_cond_wait(&stlr->follow_cond, &stlr->follow_mutex);
                 pthread_mutex_unlock(&stlr->follow_mutex);
                 break;
@@ -191,7 +189,7 @@ static void comm_receive_callback(void *tcps)
     int ret = 0;
     stroller_t *stlr = container_of(tcps, stroller_t, comm.tcps);
     stlr_comm_t *comm = &stlr->comm;
-    stlr_chassis_t *chassis = &stlr->chassis;
+    chassis_t *chassis = &stlr->chassis;
     int len = strlen(comm->rbuf);
     log_debug("rec[%d]: %s", len, comm->rbuf);
     if (len == 0 || comm->rbuf[0] != 'y' || comm->rbuf[len - 1] != 'c') {
@@ -254,8 +252,7 @@ start_listen:
     }
     log_info("accept client connect");
     while (!is_stop) {
-        // sync read, it will callback when read success in the current thread.
-        // log_error("test");
+        /* sync read, it will callback when read success in the current thread. */
         ret = tcp_read_timeout(tcps, comm->rbuf, sizeof(comm->rbuf), 100);
         if (ret == 0) {
             log_info("Close connection from client");
@@ -263,7 +260,6 @@ start_listen:
         }
         else if (ret == TIMEOUT_RET) {
             /* Not something to do */
-            // continue;
         }
         else if (ret < 0) {
             break;
@@ -398,10 +394,8 @@ stroller_t *stlr_create()
         goto err0;
     }
 
-    stlr->chassis.mr = motor_create(MOTOR_CURRENT_OPEN, MOTOR_ID_RIGHT);
-    stlr->chassis.ml = motor_create(MOTOR_CURRENT_OPEN, MOTOR_ID_LEFT);
-    stlr->chassis.servo = servo_create();
-    if (stlr->chassis.mr == NULL || stlr->chassis.ml == NULL || stlr->chassis.servo == NULL) {
+    ret = chassis_register(&stlr->chassis);
+    if (ret) {
         log_error("Failed to create chassis");
         goto err1;
     }
@@ -441,9 +435,7 @@ stroller_t *stlr_create()
 err3:
 err2:
     stlr_sensor_destroy(stlr);
-    motor_destroy(stlr->chassis.mr);
-    motor_destroy(stlr->chassis.ml);
-    servo_destroy(stlr->chassis.servo);
+    chassis_destroy(&stlr->chassis);
     iic_destroy(stlr->iic);
 err1:
     free(stlr);
@@ -457,9 +449,7 @@ void stlr_destroy(stroller_t *stlr)
 
     stlr_sensor_destroy(stlr);
 
-    motor_destroy(stlr->chassis.mr);
-    motor_destroy(stlr->chassis.ml);
-    servo_destroy(stlr->chassis.servo);
+    chassis_destroy(&stlr->chassis);
 
     free(stlr);
 }

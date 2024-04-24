@@ -20,6 +20,7 @@ int motor_set_speed(motor_t *motor, uint32_t speed);
 int motor_get_speed(motor_t *motor, uint32_t *speed);
 int motor_set_angle(motor_t *motor, uint32_t angle);
 int motor_get_angle(motor_t *motor, uint32_t *angle);
+int get_motor_id(motor_t *motor);
 motor_t *motor_create(enum MOTOR_WORK_TYPE, int id);
 void motor_destroy(motor_t *motor);
 
