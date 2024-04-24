@@ -6,7 +6,7 @@
 #define MOTOR_ID_RIGHT 0
 #define MOTOR_ID_LEFT 1
 
-int set_chassic_speed(chassis_t *chassis, float speed)
+int set_chassis_speed(chassis_t *chassis, float speed)
 {
     int ret = 0;
     int speed_i = (int)speed;
@@ -18,7 +18,7 @@ int set_chassic_speed(chassis_t *chassis, float speed)
     return ret;
 }
 
-int set_chassic_turn(chassis_t *chassis, float turn)
+int set_chassis_turn(chassis_t *chassis, float turn)
 {
     int ret = 0;
     float angle;
@@ -33,7 +33,7 @@ int set_chassic_turn(chassis_t *chassis, float turn)
     return ret;
 }
 
-float get_chassic_speed(chassis_t *chassis)
+float get_chassis_speed(chassis_t *chassis)
 {
 #ifdef USR_OPEN_LOOP
     return chassis->speed;
@@ -48,7 +48,7 @@ float get_chassic_speed(chassis_t *chassis)
     return (s1 + s2) / 2.0f;
 }
 
-float get_chassic_turn(chassis_t *chassis)
+float get_chassis_turn(chassis_t *chassis)
 {
 #ifdef USR_OPEN_LOOP
     return chassis->turn;
