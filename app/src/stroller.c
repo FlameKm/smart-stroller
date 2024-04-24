@@ -399,17 +399,23 @@ stroller_t *stlr_create()
         log_error("Failed to create chassis");
         goto err1;
     }
+    set_chassis_speed(&stlr->chassis, 0);// stop
+    set_chassis_turn(&stlr->chassis, 0); // straight
+    if (get_chassis_speed(&stlr->chassis) != 0 || get_chassis_turn(&stlr->chassis) != 0) {
+        log_error("Failed to set chassis speed and turn");
+        goto err2;
+    }
 
     stlr->iic = iic_create(USE_IIC_BUS);
     if (stlr->iic == NULL) {
         log_error("Failed to create iic");
-        goto err2;
+        goto err3;
     }
 
     ret = stlr_sensor_create(stlr);
     if (ret) {
         log_warn("Failed to init sensor");
-        goto err2;
+        goto err3;
     }
 
     // stlr->comm.comm = comm_create_with_register(COMM_TYPE_UART);
@@ -433,10 +439,10 @@ stroller_t *stlr_create()
     return stlr;
 
 err3:
-err2:
     stlr_sensor_destroy(stlr);
-    chassis_destroy(&stlr->chassis);
     iic_destroy(stlr->iic);
+err2:
+    chassis_destroy(&stlr->chassis);
 err1:
     free(stlr);
 err0:

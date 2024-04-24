@@ -17,10 +17,10 @@ typedef struct chassis {
 } chassis_t;
 
 
-int set_chassic_speed(chassis_t *chassis, float speed);
-int set_chassic_turn(chassis_t *chassis, float turn);
-float get_chassic_speed(chassis_t *chassis);
-float get_chassic_turn(chassis_t *chassis);
+int set_chassis_speed(chassis_t *chassis, float speed);
+int set_chassis_turn(chassis_t *chassis, float turn);
+float get_chassis_speed(chassis_t *chassis);
+float get_chassis_turn(chassis_t *chassis);
 int chassis_register(chassis_t *chassis);
 void chassis_destroy(chassis_t *chassis);
 
