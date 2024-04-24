@@ -92,30 +92,23 @@ static void *sensor_loop(void *ptr)
     return NULL;
 }
 
-static int remote_move(stroller_t *stlr, COMM_COMMAND cmd, int data1, int data2)
+static int move_of_remote(stroller_t *stlr, COMM_COMMAND cmd, int data1, int data2)
 {
     int ret = 0;
-    stlr_chassis_t *chassis = &stlr->chassis;
+    log_info("move_of_remote");
+    chassis_t *chassis = &stlr->chassis;
     switch (cmd) {
         case COMM_CMD_STOP:
-            // todo.
+            set_chassis_speed(chassis, 0);
             log_debug("remote stop");
             break;
-        case COMM_CMD_FORWARD:
-            // todo.
+        case COMM_CMD_SPEED:
+            set_chassis_speed(chassis, (float)data1);
             log_debug("remote forward");
             break;
-        case COMM_CMD_BACKWARD:
-            // todo.
-            log_debug("remote backward");
-            break;
-        case COMM_CMD_LEFT:
-            // todo.
+        case COMM_CMD_DIRECTION:
+            set_chassis_turn(chassis, (float)data1);
             log_debug("remote left");
-            break;
-        case COMM_CMD_RIGHT:
-            // todo.
-            log_debug("remote right");
             break;
         case COMM_CMD_NONE:
             /* Not something to do */
@@ -161,7 +154,7 @@ static void *stlr_follow_loop(void *ptr)
                 usleep(500 * 1000);
                 break;
             case STLR_MODE_REMOTE:
-                ret = remote_move(stlr, stlr->follow_cmd, stlr->follow_data[0], stlr->follow_data[1]);
+                ret = move_of_remote(stlr, stlr->follow_cmd, stlr->follow_data[0], stlr->follow_data[1]);
                 if (ret < 0) {
                     log_error("Invalid remote command cmd:%d, data1:%d, data2:%d", stlr->follow_cmd, stlr->follow_data[0], stlr->follow_data[1]);
                 }
@@ -208,14 +201,13 @@ static void comm_receive_callback(void *tcps)
     }
     switch (cmd) {
         case COMM_CMD_STOP:
-        case COMM_CMD_FORWARD:
-        case COMM_CMD_BACKWARD:
-        case COMM_CMD_LEFT:
-        case COMM_CMD_RIGHT:
+        case COMM_CMD_SPEED:
+        case COMM_CMD_DIRECTION:
             pthread_mutex_lock(&stlr->follow_mutex);
             stlr->follow_cmd = cmd;
             stlr->follow_data[0] = data1;
             stlr->follow_data[1] = data2;
+            pthread_cond_signal(&stlr->follow_cond);
             pthread_mutex_unlock(&stlr->follow_mutex);
             log_debug("comm remote, cmd:%d, data:%d %d", cmd, data1, data2);
             break;

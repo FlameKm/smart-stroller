@@ -28,6 +28,7 @@ int set_chassis_turn(chassis_t *chassis, float turn)
     angle = turn + 90.0;
     ret = servo_set_angle(chassis->servo, angle);
     if (!ret) {
+        servo_start(chassis->servo);
         chassis->turn = turn;
     }
     return ret;
