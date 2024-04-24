@@ -5,7 +5,6 @@
 #include <unistd.h>
 #include "servo.h"
 #include <stdio.h>
-#include "log.h"
 
 #define SERVO_SET_DUTY _IO('S', 0)//uint32_t
 #define SERVO_GET_DUTY _IO('S', 1)

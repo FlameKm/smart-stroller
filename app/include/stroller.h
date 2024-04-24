@@ -5,10 +5,8 @@
 extern "C" {
 #endif
 
-
-#include "motor.h"
+#include "chassis.h"
 #include "sensor.h"
-#include "servo.h"
 #include "comm.h"
 #include "hal_iic.h"
 #include "tcpserver.h"
@@ -44,13 +42,6 @@ typedef enum STLR_MODE
     STLR_MODE_REMOTE,
 } STLR_MODE;
 
-typedef struct stlr_chassis {
-    motor_t *ml;
-    motor_t *mr;
-    servo_t *servo;
-} stlr_chassis_t;
-
-
 typedef enum COMM_COMMAND
 {
     COMM_CMD_NONE,
@@ -71,10 +62,10 @@ typedef struct stlr_comm {
 } stlr_comm_t;
 
 typedef struct stroller {
-    stlr_chassis_t chassis;
     stlr_sensor_t sensor;
     stlr_comm_t comm;
     iic_dev_t *iic;
+    chassis_t chassis;
 
     enum STLR_MODE mode;
     pthread_cond_t follow_cond;
