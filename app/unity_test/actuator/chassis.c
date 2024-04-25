@@ -16,13 +16,12 @@ int main()
     for (int i = 0; i <= 10; i++) {
         float s1, s2;
         s1 = 100 * i;
-        s2 = 1000 - 100 * i;
         ret = set_chassis_speed(&chassis, s1);
         if (ret < 0) {
             log_error("motor set speed failed");
             goto err;
         }
-        log_info("motor1 set to %.1f, motor2 set to %.1f", s1, s2);
+        log_info("chassis speed set to %.1f", s1);
         usleep(333 * 1000);
     }
 
