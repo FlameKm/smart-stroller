@@ -3,13 +3,32 @@
 
 #define USR_OPEN_LOOP
 
+#define USE_GPIO_IN1 73
+#define USE_GPIO_IN2 72
+#define USE_GPIO_IN3 70
+#define USE_GPIO_IN4 69
+
 #define MOTOR_ID_RIGHT 0
 #define MOTOR_ID_LEFT 1
 
 int set_chassis_speed(chassis_t *chassis, float speed)
 {
     int ret = 0;
-    int speed_i = (int)speed;
+    uint32_t speed_i;
+    if (speed > 0) {
+        speed_i = (uint32_t)speed;
+        gpio_set_value(chassis->gpio_lpositive, 1);
+        gpio_set_value(chassis->gpio_lnegative, 0);
+        gpio_set_value(chassis->gpio_rpositive, 1);
+        gpio_set_value(chassis->gpio_rnegative, 0);
+    }
+    else {
+        speed_i = (uint32_t)-speed;
+        gpio_set_value(chassis->gpio_lpositive, 0);
+        gpio_set_value(chassis->gpio_lnegative, 1);
+        gpio_set_value(chassis->gpio_rpositive, 0);
+        gpio_set_value(chassis->gpio_rnegative, 1);
+    }
     ret = motor_set_speed(chassis->ml, speed_i);
     ret |= motor_set_speed(chassis->mr, speed_i);
     if (!ret) {
@@ -82,10 +101,23 @@ int chassis_register(chassis_t *chassis)
         return -3;
     }
 
+    chassis->gpio_lpositive = gpio_create(USE_GPIO_IN1, GPIO_DIRECTION_OUT);
+    gpio_set_value(chassis->gpio_lpositive, 0);
+    chassis->gpio_lnegative = gpio_create(USE_GPIO_IN2, GPIO_DIRECTION_OUT);
+    gpio_set_value(chassis->gpio_lnegative, 0);
+    chassis->gpio_rpositive = gpio_create(USE_GPIO_IN3, GPIO_DIRECTION_OUT);
+    gpio_set_value(chassis->gpio_rpositive, 0);
+    chassis->gpio_rnegative = gpio_create(USE_GPIO_IN4, GPIO_DIRECTION_OUT);
+    gpio_set_value(chassis->gpio_rnegative, 0);
     return 0;
 }
 void chassis_destroy(chassis_t *chassis)
 {
+    gpio_destroy(chassis->gpio_lpositive);
+    gpio_destroy(chassis->gpio_lnegative);
+    gpio_destroy(chassis->gpio_rpositive);
+    gpio_destroy(chassis->gpio_rnegative);
+    
     motor_destroy(chassis->mr);
     motor_destroy(chassis->ml);
     servo_destroy(chassis->servo);

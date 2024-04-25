@@ -14,4 +14,5 @@ add_executable(chassis
     ../../src/actuator/servo.c
     ../../src/actuator/chassis.c
     ../../lib/log/log.c
+    ../../src/hal/hal_gpio.c
 )
